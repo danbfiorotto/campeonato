@@ -318,7 +318,7 @@ export default async function TimesPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {team.players.map((player, index) => {
+                          {team.players.map((player: any, index: number) => {
                             const winRate = player.gamesPlayed > 0 
                               ? ((player.wins / player.gamesPlayed) * 100).toFixed(0) 
                               : '0'
