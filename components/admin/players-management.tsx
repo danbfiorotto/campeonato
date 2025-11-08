@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import Image from 'next/image'
 
 export function PlayersManagement() {
   const [players, setPlayers] = useState<any[]>([])
@@ -358,25 +359,35 @@ export function PlayersManagement() {
   })
 
   if (loading || profileLoading) {
-    return <div>Carregando...</div>
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-neutral-400">Carregando...</div>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Jogadores</h2>
-        <Button onClick={() => {
-          setEditingPlayer(null)
-          setPlayerName('')
-          setSelectedGames([])
-          // Pré-selecionar o time do admin se não for super admin
-          if (userProfile && userProfile.role !== 'super' && userProfile.team_id) {
-            setPlayerTeam(userProfile.team_id)
-          } else {
-            setPlayerTeam('')
-          }
-          setDialogOpen(true)
-        }}>
+        <div>
+          <h2 className="text-2xl md:text-3xl font-heading font-bold text-white">Jogadores</h2>
+          <p className="text-neutral-400 text-sm mt-1">Gerencie os jogadores de cada time</p>
+        </div>
+        <Button 
+          onClick={() => {
+            setEditingPlayer(null)
+            setPlayerName('')
+            setSelectedGames([])
+            // Pré-selecionar o time do admin se não for super admin
+            if (userProfile && userProfile.role !== 'super' && userProfile.team_id) {
+              setPlayerTeam(userProfile.team_id)
+            } else {
+              setPlayerTeam('')
+            }
+            setDialogOpen(true)
+          }}
+          className="bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.5)]"
+        >
           Novo Jogador
         </Button>
         <Dialog open={dialogOpen} onOpenChange={(open) => {
@@ -388,12 +399,12 @@ export function PlayersManagement() {
             setPlayerTeam(userProfile.team_id)
           }
         }}>
-          <DialogContent>
+          <DialogContent className="bg-neutral-900 border-neutral-700">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-white font-heading">
                 {editingPlayer ? 'Editar Jogador' : 'Criar Novo Jogador'}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-neutral-400">
                 {editingPlayer 
                   ? 'Atualize as informações do jogador'
                   : 'Adicione um novo jogador ao campeonato'
@@ -490,38 +501,55 @@ export function PlayersManagement() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+        <Card className="neon-card-rac">
           <CardHeader>
-            <CardTitle className="text-rac">RAC</CardTitle>
-            <CardDescription>Jogadores do time RAC</CardDescription>
+            <div className="flex items-center gap-3">
+              <div className="relative w-12 h-12 md:w-16 md:h-16">
+                <Image
+                  src="/logo-rac.jpeg"
+                  alt="Logo RAC"
+                  fill
+                  className="object-contain rounded-lg"
+                  unoptimized
+                />
+              </div>
+              <div>
+                <CardTitle className="text-orange-400 font-heading text-xl">RAC</CardTitle>
+                <CardDescription className="text-neutral-400">Jogadores do time RAC</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {racPlayers.length > 0 ? (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Jogos</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                  <TableRow className="border-neutral-700">
+                    <TableHead className="text-neutral-300 font-heading">Nome</TableHead>
+                    <TableHead className="text-neutral-300 font-heading">Jogos</TableHead>
+                    <TableHead className="text-right text-neutral-300 font-heading">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {racPlayers.map(player => (
-                    <TableRow key={player.id}>
-                      <TableCell className="font-medium">{player.name}</TableCell>
+                    <TableRow key={player.id} className="border-neutral-800 hover:bg-neutral-800/50">
+                      <TableCell className="font-medium text-white">{player.name}</TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {playerGames[player.id]?.length > 0 ? (
                             playerGames[player.id].map((gameId: string) => {
                               const game = games.find(g => g.id === gameId)
                               return game ? (
-                                <Badge key={gameId} variant="secondary" className="text-xs">
+                                <Badge 
+                                  key={gameId} 
+                                  variant="secondary" 
+                                  className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/50"
+                                >
                                   {game.name}
                                 </Badge>
                               ) : null
                             })
                           ) : (
-                            <span className="text-xs text-muted-foreground">Nenhum jogo</span>
+                            <span className="text-xs text-neutral-500">Nenhum jogo</span>
                           )}
                         </div>
                       </TableCell>
@@ -533,6 +561,7 @@ export function PlayersManagement() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleEditPlayer(player)}
+                                className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
                               >
                                 Editar
                               </Button>
@@ -540,12 +569,13 @@ export function PlayersManagement() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDeletePlayer(player.id)}
+                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                               >
                                 Excluir
                               </Button>
                             </>
                           ) : (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-neutral-500">
                               Sem permissão
                             </span>
                           )}
@@ -563,38 +593,55 @@ export function PlayersManagement() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="neon-card-ast">
           <CardHeader>
-            <CardTitle className="text-ast">AST</CardTitle>
-            <CardDescription>Jogadores do time AST</CardDescription>
+            <div className="flex items-center gap-3">
+              <div className="relative w-12 h-12 md:w-16 md:h-16">
+                <Image
+                  src="/logo-ast.jpeg"
+                  alt="Logo AST"
+                  fill
+                  className="object-contain rounded-lg"
+                  unoptimized
+                />
+              </div>
+              <div>
+                <CardTitle className="text-red-400 font-heading text-xl">AST</CardTitle>
+                <CardDescription className="text-neutral-400">Jogadores do time AST</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {astPlayers.length > 0 ? (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Jogos</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                  <TableRow className="border-neutral-700">
+                    <TableHead className="text-neutral-300 font-heading">Nome</TableHead>
+                    <TableHead className="text-neutral-300 font-heading">Jogos</TableHead>
+                    <TableHead className="text-right text-neutral-300 font-heading">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {astPlayers.map(player => (
-                    <TableRow key={player.id}>
-                      <TableCell className="font-medium">{player.name}</TableCell>
+                    <TableRow key={player.id} className="border-neutral-800 hover:bg-neutral-800/50">
+                      <TableCell className="font-medium text-white">{player.name}</TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {playerGames[player.id]?.length > 0 ? (
                             playerGames[player.id].map((gameId: string) => {
                               const game = games.find(g => g.id === gameId)
                               return game ? (
-                                <Badge key={gameId} variant="secondary" className="text-xs">
+                                <Badge 
+                                  key={gameId} 
+                                  variant="secondary" 
+                                  className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/50"
+                                >
                                   {game.name}
                                 </Badge>
                               ) : null
                             })
                           ) : (
-                            <span className="text-xs text-muted-foreground">Nenhum jogo</span>
+                            <span className="text-xs text-neutral-500">Nenhum jogo</span>
                           )}
                         </div>
                       </TableCell>
@@ -606,6 +653,7 @@ export function PlayersManagement() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleEditPlayer(player)}
+                                className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
                               >
                                 Editar
                               </Button>
@@ -613,12 +661,13 @@ export function PlayersManagement() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDeletePlayer(player.id)}
+                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                               >
                                 Excluir
                               </Button>
                             </>
                           ) : (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-neutral-500">
                               Sem permissão
                             </span>
                           )}

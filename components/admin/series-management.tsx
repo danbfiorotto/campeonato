@@ -66,21 +66,30 @@ export function SeriesManagement() {
   }
 
   if (loading) {
-    return <div>Carregando...</div>
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-neutral-400">Carregando...</div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Séries</h2>
+        <div>
+          <h2 className="text-2xl md:text-3xl font-heading font-bold text-white">Séries</h2>
+          <p className="text-neutral-400 text-sm mt-1">Gerencie os confrontos entre RAC e AST</p>
+        </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>Nova Série</Button>
+            <Button className="bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+              Nova Série
+            </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="bg-neutral-900 border-neutral-700">
             <DialogHeader>
-              <DialogTitle>Criar Nova Série</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-white font-heading">Criar Nova Série</DialogTitle>
+              <DialogDescription className="text-neutral-400">
                 Crie uma nova série de confronto entre RAC e AST
               </DialogDescription>
             </DialogHeader>
@@ -122,47 +131,72 @@ export function SeriesManagement() {
         </Dialog>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {series.map((serie) => {
           const game = serie.games as any
           const winner = serie.teams as any
+          const isRacWinner = winner?.name === 'RAC'
+          const isAstWinner = winner?.name === 'AST'
 
           return (
-            <Card key={serie.id}>
+            <Card 
+              key={serie.id}
+              className={`neon-card transition-all duration-300 hover:scale-105 ${
+                isRacWinner ? 'neon-card-rac' : isAstWinner ? 'neon-card-ast' : ''
+              }`}
+            >
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>{game?.name || 'Jogo'}</CardTitle>
-                    <CardDescription>
+                  <div className="flex-1">
+                    <CardTitle className="text-white font-heading">{game?.name || 'Jogo'}</CardTitle>
+                    <CardDescription className="text-neutral-400 mt-1">
                       {serie.date 
-                        ? new Date(serie.date).toLocaleDateString('pt-BR')
+                        ? new Date(serie.date).toLocaleDateString('pt-BR', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })
                         : 'Sem data definida'
                       }
                     </CardDescription>
                   </div>
                   {serie.is_completed ? (
-                    <Badge className="bg-green-500">Concluído</Badge>
+                    <Badge className="bg-green-600 text-white shadow-[0_0_15px_rgba(34,197,94,0.5)]">
+                      Concluído
+                    </Badge>
                   ) : (
-                    <Badge variant="outline">Em andamento</Badge>
+                    <Badge variant="outline" className="border-yellow-500/50 text-yellow-400 bg-yellow-500/10">
+                      Em andamento
+                    </Badge>
                   )}
                 </div>
               </CardHeader>
               <CardContent>
                 {serie.is_completed ? (
-                  <div className="space-y-2">
-                    <div>
-                      <span className="font-semibold">Vencedor: </span>
-                      <Badge className={winner?.name === 'RAC' ? 'bg-rac' : 'bg-ast'}>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-neutral-300 text-sm font-medium">Vencedor:</span>
+                      <Badge 
+                        className={
+                          isRacWinner 
+                            ? 'bg-orange-600 text-white shadow-[0_0_15px_rgba(249,115,22,0.6)]' 
+                            : isAstWinner
+                            ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.6)]'
+                            : 'bg-gray-600'
+                        }
+                      >
                         {winner?.name || 'N/A'}
                       </Badge>
                     </div>
-                    <div>
-                      <span className="font-semibold">Placar: </span>
-                      {serie.score_rac} x {serie.score_ast}
+                    <div className="flex items-center gap-2">
+                      <span className="text-neutral-300 text-sm font-medium">Placar:</span>
+                      <span className="text-white font-bold text-lg">
+                        {serie.score_rac} x {serie.score_ast}
+                      </span>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-muted-foreground">
+                  <div className="text-neutral-400 text-sm">
                     Série ainda não concluída
                   </div>
                 )}

@@ -163,21 +163,30 @@ export function MatchesManagement() {
   ]
 
   if (loading) {
-    return <div>Carregando...</div>
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-neutral-400">Carregando...</div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Partidas</h2>
+        <div>
+          <h2 className="text-2xl md:text-3xl font-heading font-bold text-white">Partidas</h2>
+          <p className="text-neutral-400 text-sm mt-1">Registre e gerencie as partidas das séries</p>
+        </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>Nova Partida</Button>
+            <Button className="bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+              Nova Partida
+            </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-neutral-900 border-neutral-700">
             <DialogHeader>
-              <DialogTitle>Criar Nova Partida</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-white font-heading">Criar Nova Partida</DialogTitle>
+              <DialogDescription className="text-neutral-400">
                 Registre uma nova partida de uma série
               </DialogDescription>
             </DialogHeader>
@@ -301,31 +310,48 @@ export function MatchesManagement() {
         </Dialog>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {matches.map((match) => {
           const game = (match.series as any)?.games as any
           const winner = match.teams as any
           const mvp = match.players as any
+          const isRacWinner = winner?.name === 'RAC'
+          const isAstWinner = winner?.name === 'AST'
 
           return (
-            <Card key={match.id}>
+            <Card 
+              key={match.id}
+              className={`neon-card transition-all duration-300 hover:scale-105 ${
+                isRacWinner ? 'neon-card-rac' : isAstWinner ? 'neon-card-ast' : ''
+              }`}
+            >
               <CardHeader>
-                <CardTitle>
+                <CardTitle className="text-white font-heading">
                   {game?.name || 'Jogo'} - Partida {match.match_number}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <div>
-                    <span className="font-semibold">Vencedor: </span>
-                    <Badge className={winner?.name === 'RAC' ? 'bg-rac' : 'bg-ast'}>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-neutral-300 text-sm font-medium">Vencedor:</span>
+                    <Badge 
+                      className={
+                        isRacWinner 
+                          ? 'bg-orange-600 text-white shadow-[0_0_15px_rgba(249,115,22,0.6)]' 
+                          : isAstWinner
+                          ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.6)]'
+                          : 'bg-gray-600'
+                      }
+                    >
                       {winner?.name || 'N/A'}
                     </Badge>
                   </div>
                   {mvp && (
-                    <div>
-                      <span className="font-semibold">MVP: </span>
-                      <Badge variant="secondary">{mvp.name}</Badge>
+                    <div className="flex items-center gap-2">
+                      <span className="text-neutral-300 text-sm font-medium">MVP:</span>
+                      <Badge variant="secondary" className="bg-purple-600/20 text-purple-300 border-purple-500/50">
+                        ⭐ {mvp.name}
+                      </Badge>
                     </div>
                   )}
                 </div>
