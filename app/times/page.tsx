@@ -282,7 +282,7 @@ export default async function TimesPage() {
                       Vitórias por Jogo
                     </h3>
                     <div className="flex flex-wrap gap-2">
-                      {team.winsByGame.map(({ game, wins }) => (
+                      {team.winsByGame.map(({ game, wins }: { game: string; wins: number }) => (
                         <Badge 
                           key={game}
                           variant="outline"
