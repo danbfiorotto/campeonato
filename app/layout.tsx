@@ -36,7 +36,7 @@ export default function RootLayout({
     <html lang="pt-BR" className="dark">
       <body className={`${rajdhani.className} ${rajdhani.variable} ${orbitron.variable} ${bebasNeue.variable} bg-dark-texture relative`}>
         <Navbar />
-        <main className="min-h-screen pt-16 relative">
+        <main className="min-h-screen pt-16 relative z-[4]">
           {children}
         </main>
         {/* Fire Particles Effect - Por cima do background e da imagem do hero, abaixo dos textos */}
