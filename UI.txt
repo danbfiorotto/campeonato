@@ -1,0 +1,38 @@
+?? Header com Arte Temática
+Estrutura visual:
+* Fundo escuro com textura leve (ex: fumaça digital, gradiente noturno, partículas brilhantes).
+* Personagens representando os 5 jogos posicionados como colagem:
+o Ex: Jett (Valorant), Yasuo (LoL), um operador do R6, Terrorista do CS, e personagem de Brawlhalla.
+o Estilo: silhuetas estilizadas com neon ou em poses dinâmicas com blur/sombra.
+* No centro, o logo do campeonato:
+o Pode ser algo como “RAC vs AST: Ultimate Clash”
+* Logo do RAC à esquerda e logo do AST à direita.
+o Um com tonalidade vermelha, outro azul ou roxa, separados visualmente.
+Elementos:
+* Efeito de brilho ao redor dos personagens ou contorno em neon.
+* Texto no centro:
+o Campeonato RAC vs AST
+o 5 Jogos. 2 Times. 1 Vencedor. (ou outro slogan curto)
+* Botão de Entrar / Acompanhar com efeito hover em neon.
+
+?? Benefícios dessa abordagem:
+* Traz apelo emocional e identificação: fãs reconhecem seus jogos logo de cara.
+* Estabelece o tom visual do site (estilo gamer, competitivo).
+* Cria uma capa épica, digna de abertura de campeonato.
+* Fica ótimo tanto em desktop quanto em mobile (com imagens recortadas/adaptadas).
+* Página Principal – Campeonato E-sports RAC vs AST (Mockup de Design)
+* 
+* Exemplo de interface de site de e-sports com tema dark vibrante, usando fundo escuro e detalhes neon para destaque.
+* Neste conceito de design para a página principal de um campeonato e-sports, imaginamos o confronto entre os times RAC e AST com um visual moderno, escuro e vibrante. O layout é inspirado em sites profissionais de e-sports (como ESL, Valorant Champions ou CBLOL) e apresenta fundo dark com cores neon destacadas (azul, roxo, vermelho) para realçar informações importantes. Tipografia limpa e moderna garante alta legibilidade, enquanto elementos gráficos neon em um fundo futurista reforçam a atmosfera gamershutterstock.com. O design equilibra impacto visual e funcionalidade, comunicando energia e mantendo uma experiência intuitivaseahawkmedia.com.
+* Placar Geral (Cabeçalho)
+* No topo da página, um placar de destaque exibe o resultado da série: RAC 3 × 2 AST. Este placar geral é apresentado em fonte grande e clara, com possivel uso de efeitos digitais/LED ou neon para evocar placares eletrônicos de competição. Por exemplo, um display digital com brilho neon em fundo escuro pode destacar o score final entre as equipes, similar a placares de transmissão esportiva com neon glow em fundo pretovecteezy.com. Os nomes dos times (ou logos, se disponíveis) aparecem ao lado do placar, possivelmente com cores temáticas de cada equipe para fácil identificação. Esse cabeçalho imediatamente informa o visitante sobre o campeão do confronto, de forma clara e chamativaseahawkmedia.com.
+* Cards dos Jogos (Modalidades)
+* Abaixo do placar principal, o site apresenta cards em grade para cada uma das 5 modalidades disputadas: Rainbow Six Siege (R6), League of Legends (LoL), Counter-Strike: Global Offensive (CS:GO), Brawlhalla e Valorant. Cada card atua como um resumo do jogo específico, mostrando o nome ou ícone do jogo e indicando qual time venceu aquela partida. Por exemplo, o card de LoL pode ter um pequeno marcador ou cor de fundo indicando vitória do time RAC, enquanto o card de CS:GO indica vitória do AST, e assim por diante. Esses cards usam o esquema de cores vibrantes sobre o fundo escuro para diferenciar as modalidades, mantendo consistência com o tema neon. O uso de um layout em cards facilita a leitura rápida dos resultados por jogo, segmentando as informações de forma organizada e atraentesubframe.com. Essa disposição em grid colorido lembra as seções de categorias populares em sites de games, destacando cada jogo como parte do evento total.
+* Destaques – MVPs e Top Jogadores
+* Em seguida, há uma seção de destaques do campeonato, que foca em jogadores de destaque: o MVP da série e outros top players. Esta seção pode usar um fundo levemente diferente (por exemplo, um grafismo ou brilho sutil) para se destacar do restante da página. Cada jogador em destaque aparece em um card de jogador, possivelmente com foto/avatar, nome, equipe e alguma estatística chave (kills, pontuação, etc.). O design mantém o estilo vibrante: por exemplo, contornos luminosos ou ícones de troféu em neon ao redor do card do MVP para enfatizar sua importância. Destacar jogadores faz parte da experiência de e-sports, adicionando um componente humano e competitivo que engaja os fãsseahawkmedia.com. A combinação de cores chamativas e textos claros aqui atrai a atenção para as conquistas individuais, complementando as informações de placar e resultados dos jogos.
+* Barra de Navegação (Menu)
+* No topo (ou lateral) da interface, uma barra de navegação permite acesso rápido às principais seções: Home, Jogos, Partidas, Times, Admin. Esse menu segue um design intuitivo e direto, com rótulos claros e iconografia mínima, em linha com as melhores práticas de sites de e-sports que priorizam navegação simplesseahawkmedia.com. Em nosso mockup, os botões da barra de navegação podem ganhar realce ao passar o mouse (hover) com um brilho neon leve, reforçando o estilo geral sem distrair. O fundo da barra é integrado ao esquema dark (possivelmente um cinza bem escuro/transparente) e o texto dos botões aparece em fonte branca ou em alguma cor de destaque utilizada no tema (por exemplo, azul neon para o item ativo). Essa abordagem garante que o menu seja visível e acessível em todas as páginas. Além disso, a presença de um botão "Admin" sugere funcionalidades exclusivas para administradores ou organizadores do torneio – este botão poderia ser destacado de forma sutil (por ex., um contorno diferenciado) para indicar que é reservado a usuários autorizados.
+* Estilo Visual e Experiência Geral
+* De modo geral, o mockup combina uma estética dark futurista com elementos de highlight neon, seguindo referências contemporâneas de sites gamers. Layouts em cards e seções bem demarcadas criam uma hierarquia visual clara, permitindo aos usuários identificar rapidamente placar, resultados por jogo e destaques do campeonato. As cores vibrantes em fundo escuro, junto com gráficos modernos, transmitem a energia do e-sports e engajam o público jovemsubframe.comseahawkmedia.com. Ao mesmo tempo, a estrutura permanece limpa e navegável – fatores essenciais já observados nos melhores sites do ramo, que equilibram impacto visual com usabilidade eficienteseahawkmedia.com. Este design conceitual, portanto, busca entregar uma página principal visualmente marcante e informativa, servindo tanto aos fãs (que querem ver resultados e destaques) quanto aos organizadores (com uma interface profissional e atraente para promover o evento).
+* Referências Utilizadas: Este conceito foi inspirado por exemplos de sites e-sports modernos e princípios de UI/UX atuais, incluindo layouts escuros com acentos neonshutterstock.com, organização de conteúdo em grids/cardssubframe.com e práticas recomendadas de navegação simples e clara em plataformas de jogos competitivosseahawkmedia.com. Sites oficiais como o da ESL destacam resultados e informações de forma estruturadaseahawkmedia.com, enquanto o portal Valorant Esports da Riot Games mostra a importância de um design vibrante e bem organizado para atender fãs globaisseahawkmedia.com. Este mockup integra essas ideias para apresentar uma página inicial de campeonato e-sports atraente, temática e funcional.
+

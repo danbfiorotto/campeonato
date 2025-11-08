@@ -1,0 +1,287 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-rajdhani), sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-orbitron), sans-serif;
+  }
+  
+  .font-display {
+    font-family: var(--font-bebas), sans-serif;
+  }
+  
+  .font-heading {
+    font-family: var(--font-orbitron), sans-serif;
+  }
+}
+
+/* Dark Futuristic Theme with Neon Effects */
+@layer utilities {
+  .neon-glow {
+    text-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 15px currentColor,
+      0 0 20px currentColor;
+  }
+
+  .neon-border {
+    box-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      inset 0 0 5px currentColor;
+  }
+
+  .neon-card {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(20, 20, 40, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 0 20px rgba(59, 130, 246, 0.3),
+      inset 0 0 20px rgba(59, 130, 246, 0.1);
+  }
+
+  .neon-card-rac {
+    box-shadow: 
+      0 0 20px rgba(249, 115, 22, 0.4),
+      inset 0 0 20px rgba(249, 115, 22, 0.1);
+    border-color: rgba(249, 115, 22, 0.3);
+  }
+
+  .neon-card-ast {
+    box-shadow: 
+      0 0 20px rgba(220, 38, 38, 0.4),
+      inset 0 0 20px rgba(220, 38, 38, 0.1);
+    border-color: rgba(220, 38, 38, 0.3);
+  }
+
+  .neon-hover:hover {
+    box-shadow: 
+      0 0 30px currentColor,
+      0 0 60px currentColor;
+    transition: box-shadow 0.3s ease;
+  }
+
+  .bg-dark-futuristic {
+    background-image: url('/Foto%20de%20fundo.png');
+    background-size: cover;
+    background-position: center 05%;
+    background-repeat: no-repeat;
+    background-color: #0a0a0f; /* Fallback color */
+  }
+
+  .bg-dark-texture {
+    background: linear-gradient(to bottom left, #020d28 0%, #241311 100%);
+    background-attachment: fixed;
+  }
+
+  .score-display {
+    font-family: var(--font-orbitron), monospace;
+    text-shadow: 
+      0 0 05px currentColor,
+      0 0 10px currentColor,
+      0 0 20px currentColor;
+    letter-spacing: 0.15em;
+    font-weight: 800;
+  }
+  
+  .team-name-rac {
+    color: #F97316;
+    text-shadow: 
+      0 0 10px rgba(249, 115, 22, 0.8),
+      0 0 20px rgba(249, 115, 22, 0.6),
+      0 0 30px rgba(249, 115, 22, 0.4);
+    letter-spacing: 0.2em;
+  }
+  
+  .team-name-ast {
+    color: #DC2626;
+    text-shadow: 
+      0 0 10px rgba(220, 38, 38, 0.8),
+      0 0 20px rgba(220, 38, 38, 0.6),
+      0 0 30px rgba(220, 38, 38, 0.4);
+    letter-spacing: 0.2em;
+  }
+  
+  .championship-title {
+    font-family: var(--font-bebas), sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.3em;
+    text-shadow: 
+      0 0 10px rgba(255, 255, 255, 0.8),
+      0 0 20px rgba(59, 130, 246, 0.6),
+      0 0 30px rgba(59, 130, 246, 0.4);
+  }
+
+  @keyframes pulse-neon {
+    0%, 100% {
+      opacity: 1;
+      filter: brightness(1);
+    }
+    50% {
+      opacity: 0.8;
+      filter: brightness(1.2);
+    }
+  }
+
+  .animate-pulse-neon {
+    animation: pulse-neon 2s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  @keyframes score-pulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
+  
+  .animate-score-pulse {
+    animation: score-pulse 0.6s ease-in-out;
+  }
+  
+  @keyframes led-bar {
+    0%, 100% {
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  
+  .led-bar {
+    animation: led-bar 2s ease-in-out infinite;
+  }
+  
+  .led-bar:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  
+  .led-bar:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+  
+  .led-bar:nth-child(4) {
+    animation-delay: 0.6s;
+  }
+  
+  .led-bar:nth-child(5) {
+    animation-delay: 0.8s;
+  }
+  
+  .nav-link-active {
+    position: relative;
+  }
+  
+  .nav-link-active::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+    animation: nav-underline 0.3s ease-out;
+  }
+  
+  @keyframes nav-underline {
+    from {
+      width: 0;
+      left: 50%;
+    }
+    to {
+      width: 100%;
+      left: 0;
+    }
+  }
+  
+  .logo-hover {
+    transition: all 0.3s ease;
+  }
+  
+  .logo-hover:hover {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+  }
+  
+  /* Garantir que o canvas das partículas seja transparente */
+  #tsparticles {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+  
+  #tsparticles canvas {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+}
+
