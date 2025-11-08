@@ -139,9 +139,13 @@ export default async function TimesPage() {
     // Calculate wins by game
     const winsByGame = new Map<string, number>()
     matches?.forEach(match => {
-      if (match.winner_team_id === team.id && match.series?.games) {
-        const gameName = (match.series.games as any).name || 'Unknown'
-        winsByGame.set(gameName, (winsByGame.get(gameName) || 0) + 1)
+      if (match.winner_team_id === team.id && match.series) {
+        const series = match.series as any
+        const game = series.games as any
+        if (game) {
+          const gameName = game.name || 'Unknown'
+          winsByGame.set(gameName, (winsByGame.get(gameName) || 0) + 1)
+        }
       }
     })
     
