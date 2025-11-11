@@ -1,5 +1,7 @@
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
+import { AnimatedHeroScore } from './animated-hero-score'
+import { ScoreChangeNotification } from '@/components/score/score-change-notification'
 
 export async function HeroHeader() {
   const supabase = await createClient()
@@ -25,6 +27,7 @@ export async function HeroHeader() {
 
   return (
     <div className="relative w-full min-h-[900px] sm:min-h-[1000px] md:min-h-[1100px] lg:min-h-[1200px] bg-dark-futuristic overflow-hidden" style={{ zIndex: 1 }}>
+      <ScoreChangeNotification racWins={racWins} astWins={astWins} />
       {/* Background Overlay for better text readability - mais escuro */}
       <div className="absolute inset-0 bg-black/60" style={{ zIndex: 1 }}></div>
       
@@ -77,29 +80,7 @@ export async function HeroHeader() {
               </div>
 
               {/* Score Display */}
-              <div className="flex items-center gap-3 sm:gap-4 md:gap-6 lg:gap-12 order-2">
-                {/* Divisor decorativo */}
-                <div className="hidden md:block w-px h-24 bg-gradient-to-b from-transparent via-orange-500/50 to-transparent"></div>
-                
-                <div className="text-center">
-                  <div className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl xl:text-9xl font-extrabold text-orange-500 score-display">
-                    {racWins}
-                  </div>
-                  <div className="text-xs sm:text-sm text-orange-400 font-semibold mt-1 sm:hidden">RAC</div>
-                </div>
-                
-                <div className="text-3xl sm:text-4xl md:text-6xl font-bold text-gray-500 font-heading">-</div>
-                
-                <div className="text-center">
-                  <div className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl xl:text-9xl font-extrabold text-red-500 score-display">
-                    {astWins}
-                  </div>
-                  <div className="text-xs sm:text-sm text-red-400 font-semibold mt-1 sm:hidden">AST</div>
-                </div>
-                
-                {/* Divisor decorativo */}
-                <div className="hidden md:block w-px h-24 bg-gradient-to-b from-transparent via-red-500/50 to-transparent"></div>
-              </div>
+              <AnimatedHeroScore racWins={racWins} astWins={astWins} />
 
               {/* AST Logo */}
               <div className="flex flex-col items-center space-y-2 md:space-y-3 order-3">

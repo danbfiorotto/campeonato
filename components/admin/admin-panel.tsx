@@ -4,13 +4,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SeriesManagement } from './series-management'
 import { MatchesManagement } from './matches-management'
 import { PlayersManagement } from './players-management'
-import { Trophy, Gamepad2, Users } from 'lucide-react'
+import { PendingMediaApproval } from './pending-media-approval'
+import { Trophy, Gamepad2, Users, Image as ImageIcon } from 'lucide-react'
 
 export function AdminPanel() {
   return (
     <div className="max-w-7xl mx-auto">
       <Tabs defaultValue="series" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-neutral-900/50 border border-neutral-700 p-1">
+        <TabsList className="grid w-full grid-cols-4 bg-neutral-900/50 border border-neutral-700 p-1">
           <TabsTrigger 
             value="series" 
             className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400 data-[state=active]:border-blue-500/50 flex items-center gap-2"
@@ -32,6 +33,13 @@ export function AdminPanel() {
             <Users className="w-4 h-4" />
             Jogadores
           </TabsTrigger>
+          <TabsTrigger 
+            value="media"
+            className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400 data-[state=active]:border-blue-500/50 flex items-center gap-2"
+          >
+            <ImageIcon className="w-4 h-4" />
+            Aprovações
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="series" className="mt-8">
@@ -44,6 +52,10 @@ export function AdminPanel() {
         
         <TabsContent value="players" className="mt-8">
           <PlayersManagement />
+        </TabsContent>
+        
+        <TabsContent value="media" className="mt-8">
+          <PendingMediaApproval />
         </TabsContent>
       </Tabs>
     </div>

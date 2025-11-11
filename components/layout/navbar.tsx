@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { User, Home, Gamepad2, Trophy, Users, Menu, X } from 'lucide-react'
+import { User, Home, Gamepad2, Trophy, Users, Menu, X, Video, Award } from 'lucide-react'
 
 export function Navbar() {
   const pathname = usePathname()
@@ -33,6 +33,8 @@ export function Navbar() {
     { href: '/jogos', label: 'Jogos', icon: Gamepad2 },
     { href: '/partidas', label: 'Partidas', icon: Trophy },
     { href: '/times', label: 'Times', icon: Users },
+    { href: '/streams', label: 'Streams', icon: Video },
+    { href: '/hall-da-fama', label: 'Hall da Fama', icon: Award },
   ]
 
   return (

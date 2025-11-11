@@ -2,6 +2,28 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error(
+      '❌ Variáveis de ambiente do Supabase não configuradas!\n\n' +
+      'Por favor, crie um arquivo .env.local na raiz do projeto.\n' +
+      'Veja o arquivo .env.local.example como referência.'
+    )
+    // Retorna uma resposta de erro mais amigável
+    return new NextResponse(
+      JSON.stringify({
+        error: 'Configuração do Supabase ausente',
+        message: 'Por favor, configure as variáveis de ambiente NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY no arquivo .env.local'
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    )
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -9,8 +31,8 @@ export async function middleware(request: NextRequest) {
   })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {

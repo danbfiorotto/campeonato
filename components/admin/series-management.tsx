@@ -9,6 +9,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { getSeriesFormat, getWinsNeeded, canCompleteSeries, getSeriesWinner } from '@/lib/utils/series'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { ConfettiTrigger } from '@/components/score/confetti-trigger'
 
 export function SeriesManagement() {
   const [series, setSeries] = useState<any[]>([])
@@ -17,6 +20,8 @@ export function SeriesManagement() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedGame, setSelectedGame] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
+  const [confettiTrigger, setConfettiTrigger] = useState(false)
+  const [confettiTeam, setConfettiTeam] = useState<'RAC' | 'AST' | undefined>(undefined)
   const supabase = createClient()
 
   useEffect(() => {
@@ -65,6 +70,77 @@ export function SeriesManagement() {
     loadData()
   }
 
+  const handleCompleteSeries = async (serie: any) => {
+    const game = serie.games as any
+    const winner = getSeriesWinner(serie.score_rac, serie.score_ast, game?.slug)
+    
+    if (!winner) {
+      alert('A série ainda não pode ser encerrada. Nenhum time atingiu o número necessário de vitórias.')
+      return
+    }
+
+    // Buscar os IDs dos times
+    const { data: teams } = await supabase
+      .from('teams')
+      .select('id, name')
+      .in('name', ['RAC', 'AST'])
+
+    const racTeam = teams?.find(t => t.name === 'RAC')
+    const astTeam = teams?.find(t => t.name === 'AST')
+    const winnerTeamId = winner === 'RAC' ? racTeam?.id : astTeam?.id
+
+    if (!winnerTeamId) {
+      alert('Erro ao encontrar o time vencedor')
+      return
+    }
+
+    const { error } = await supabase
+      .from('series')
+      .update({
+        winner_team_id: winnerTeamId,
+        is_completed: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', serie.id)
+
+    if (error) {
+      alert('Erro ao encerrar série: ' + error.message)
+      return
+    }
+
+    // Disparar confete
+    setConfettiTeam(winner as 'RAC' | 'AST')
+    setConfettiTrigger(true)
+    setTimeout(() => {
+      setConfettiTrigger(false)
+    }, 100)
+
+    // Notificar Discord via webhook
+    try {
+      const seriesUrl = `${window.location.origin}/jogos/${serie.id}`
+      const score = `${serie.score_rac}-${serie.score_ast}`
+      
+      await fetch('/api/notify/discord', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          gameName: game?.name || 'Jogo',
+          winner,
+          score,
+          seriesUrl,
+          team: winner,
+        }),
+      })
+    } catch (error) {
+      console.error('Erro ao enviar webhook Discord:', error)
+      // Não bloquear o fluxo se o webhook falhar
+    }
+
+    loadData()
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -75,6 +151,7 @@ export function SeriesManagement() {
 
   return (
     <div className="space-y-6">
+      <ConfettiTrigger trigger={confettiTrigger} team={confettiTeam} intensity="high" />
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl md:text-3xl font-heading font-bold text-white">Séries</h2>
@@ -196,8 +273,54 @@ export function SeriesManagement() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-neutral-400 text-sm">
-                    Série ainda não concluída
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-300 text-sm font-medium">Placar Atual:</span>
+                      <span className="text-white font-bold text-lg">
+                        {serie.score_rac} x {serie.score_ast}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-400 text-xs">Formato:</span>
+                      <Badge variant="outline" className="text-xs">
+                        {getSeriesFormat(game?.slug)}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-400 text-xs">Vitórias necessárias:</span>
+                      <span className="text-neutral-300 text-xs font-medium">
+                        {getWinsNeeded(game?.slug)} vitórias
+                      </span>
+                    </div>
+                    {canCompleteSeries(serie.score_rac, serie.score_ast, game?.slug) && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            variant="default" 
+                            className="w-full mt-2 bg-green-600 hover:bg-green-500 text-white"
+                          >
+                            Encerrar Série
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-neutral-900 border-neutral-700">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-white">Encerrar Série</AlertDialogTitle>
+                            <AlertDialogDescription className="text-neutral-400">
+                              Tem certeza que deseja encerrar esta série? O vencedor será definido automaticamente baseado no placar atual ({serie.score_rac} x {serie.score_ast}).
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleCompleteSeries(serie)}
+                              className="bg-green-600 hover:bg-green-500"
+                            >
+                              Confirmar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
                   </div>
                 )}
               </CardContent>

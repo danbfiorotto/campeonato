@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { HeroHeader } from '@/components/layout/hero-header'
 import { Calendar, Clock, Gamepad2 } from 'lucide-react'
+import { getSeriesFormat, getWinsNeeded } from '@/lib/utils/series'
+import { SeriesCard } from '@/components/series/series-card'
 
 export default async function Home() {
   const supabase = await createClient()
@@ -202,65 +204,18 @@ export default async function Home() {
             Resultados por modalidade
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {series?.map((serie) => {
               const game = serie.games as any
               const winner = serie.teams as any
-              const isRacWinner = winner?.name === 'RAC'
-              const isAstWinner = winner?.name === 'AST'
               
               return (
-                <Link 
-                  key={serie.id} 
-                  href={`/jogos/${serie.id}`}
-                  className="group"
-                >
-                  <Card className={`neon-card h-full transition-all duration-300 hover:scale-105 ${
-                    isRacWinner ? 'neon-card-rac' : isAstWinner ? 'neon-card-ast' : ''
-                  }`}>
-                    <CardHeader>
-                      <CardTitle className="text-white text-xl">
-                        {game?.name || 'Jogo'}
-                      </CardTitle>
-                      <CardDescription className="text-gray-400">
-                        {game?.slug || ''}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {serie.is_completed ? (
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-300 text-sm">Vencedor:</span>
-                            <Badge 
-                              className={`${
-                                isRacWinner 
-                                  ? 'bg-orange-600 text-white shadow-[0_0_15px_rgba(249,115,22,0.6)]' 
-                                  : isAstWinner
-                                  ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.6)]'
-                                  : 'bg-gray-600'
-                              }`}
-                            >
-                              {winner?.name || 'N/A'}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-300 text-sm">Placar:</span>
-                            <span className="text-white font-semibold">
-                              {serie.score_rac} x {serie.score_ast}
-                            </span>
-                          </div>
-                        </div>
-                      ) : (
-                        <Badge variant="outline" className="border-gray-500 text-gray-400">
-                          Pendente
-                        </Badge>
-                      )}
-                      <div className="mt-4 text-orange-400 text-sm group-hover:text-orange-300 transition-colors">
-                        Ver detalhes →
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                <SeriesCard 
+                  key={serie.id}
+                  serie={serie}
+                  game={game}
+                  winner={winner}
+                />
               )
             })}
           </div>

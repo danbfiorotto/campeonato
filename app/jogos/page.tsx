@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import { getSeriesFormat, getWinsNeeded } from '@/lib/utils/series'
 
 export default async function JogosPage() {
   const supabase = await createClient()
@@ -72,11 +73,30 @@ export default async function JogosPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-muted-foreground">
-                    {serie.date 
-                      ? `Agendado para ${new Date(serie.date).toLocaleDateString('pt-BR')}`
-                      : 'Ainda não agendado'
-                    }
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">Placar Atual:</span>
+                      <span className="text-lg font-bold">
+                        {serie.score_rac} x {serie.score_ast}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Formato:</span>
+                      <Badge variant="outline" className="text-xs">
+                        {getSeriesFormat(game?.slug)}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Vitórias necessárias:</span>
+                      <span className="text-sm font-medium">
+                        {getWinsNeeded(game?.slug)} vitórias
+                      </span>
+                    </div>
+                    {serie.date && (
+                      <div className="pt-2 border-t text-muted-foreground text-sm">
+                        Agendado para {new Date(serie.date).toLocaleDateString('pt-BR')}
+                      </div>
+                    )}
                   </div>
                 )}
                 <div className="mt-4">
