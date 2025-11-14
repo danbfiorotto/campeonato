@@ -846,7 +846,7 @@ export function PlayersManagement() {
                           <AlertDialogHeader>
                             <AlertDialogTitle className="text-white">Deletar Alias</AlertDialogTitle>
                             <AlertDialogDescription className="text-neutral-400">
-                              Tem certeza que deseja deletar o alias "{alias.alias}"? Esta ação não pode ser desfeita.
+                              Tem certeza que deseja deletar o alias &quot;{alias.alias}&quot;? Esta ação não pode ser desfeita.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
