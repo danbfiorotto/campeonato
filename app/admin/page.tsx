@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdminPanel } from '@/components/admin/admin-panel'
-import { Shield } from 'lucide-react'
+import { Shield, Sparkles } from 'lucide-react'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -23,9 +25,18 @@ export default async function AdminPage() {
             Painel Administrativo
           </h1>
         </div>
-        <p className="text-lg md:text-xl text-neutral-300">
+        <p className="text-lg md:text-xl text-neutral-300 mb-4">
           Gerencie séries, partidas e jogadores do campeonato
         </p>
+        <Link href="/admin/ingest">
+          <Button
+            variant="outline"
+            className="border-purple-500/50 text-purple-300 hover:bg-purple-500/20 hover:border-purple-400 hover:text-purple-200 hover:shadow-[0_0_15px_rgba(147,51,234,0.5)]"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Extrair Placar via IA
+          </Button>
+        </Link>
       </div>
       <AdminPanel />
     </div>

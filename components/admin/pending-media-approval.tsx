@@ -5,8 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle2, XCircle, Clock, Image as ImageIcon } from 'lucide-react'
+import { CheckCircle2, XCircle, Clock, Image as ImageIcon, X, Maximize2, Loader2, Sparkles } from 'lucide-react'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 
 interface PendingMedia {
   id: string
@@ -27,6 +28,9 @@ interface PendingMedia {
 export function PendingMediaApproval() {
   const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [approvingMediaId, setApprovingMediaId] = useState<string | null>(null)
+  const [processingMediaId, setProcessingMediaId] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -58,23 +62,68 @@ export function PendingMediaApproval() {
   }
 
   const handleApprove = async (mediaId: string) => {
-    const { data: { user } } = await supabase.auth.getUser()
+    setApprovingMediaId(mediaId)
     
-    const { error } = await supabase
-      .from('match_media')
-      .update({
-        status: 'approved',
-        reviewed_by: user?.id || null,
-        reviewed_at: new Date().toISOString()
-      })
-      .eq('id', mediaId)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      // Aprovar a mídia
+      const { error } = await supabase
+        .from('match_media')
+        .update({
+          status: 'approved',
+          reviewed_by: user?.id || null,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('id', mediaId)
 
-    if (error) {
-      alert('Erro ao aprovar: ' + error.message)
-      return
+      if (error) {
+        alert('Erro ao aprovar: ' + error.message)
+        setApprovingMediaId(null)
+        return
+      }
+
+      // Se for uma imagem, iniciar análise automática
+      const media = pendingMedia.find(m => m.id === mediaId)
+      if (media && media.type === 'image') {
+        setApprovingMediaId(null)
+        setProcessingMediaId(mediaId)
+        
+        try {
+          console.log('[APPROVAL] Iniciando análise automática para mídia:', mediaId)
+          const response = await fetch('/api/media/auto-parse', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ mediaId }),
+          })
+
+          const result = await response.json()
+
+          if (response.ok) {
+            console.log('[APPROVAL] ✅ Análise automática iniciada:', result.draftId)
+            // Aguardar um pouco para mostrar o feedback visual
+            await new Promise(resolve => setTimeout(resolve, 1000))
+          } else {
+            console.error('[APPROVAL] ⚠️ Erro ao iniciar análise automática:', result.error)
+          }
+        } catch (error) {
+          console.error('[APPROVAL] ⚠️ Erro ao chamar API de análise:', error)
+        } finally {
+          setProcessingMediaId(null)
+        }
+      } else {
+        setApprovingMediaId(null)
+      }
+
+      loadPendingMedia()
+    } catch (error: any) {
+      console.error('[APPROVAL] Erro ao aprovar:', error)
+      alert('Erro ao aprovar: ' + (error.message || 'Erro desconhecido'))
+      setApprovingMediaId(null)
+      setProcessingMediaId(null)
     }
-
-    loadPendingMedia()
   }
 
   const handleReject = async (mediaId: string) => {
@@ -150,12 +199,39 @@ export function PendingMediaApproval() {
               <CardContent>
                 <div className="space-y-3">
                   {item.type === 'image' && (
-                    <div className="relative aspect-video bg-neutral-800 rounded-md overflow-hidden border border-neutral-700">
-                      <img
-                        src={item.url}
-                        alt="Imagem pendente"
-                        className="w-full h-full object-cover"
-                      />
+                    <div 
+                      className="relative aspect-video bg-neutral-800 rounded-md overflow-hidden border border-neutral-700 group"
+                    >
+                      <div
+                        className={`w-full h-full cursor-pointer ${(approvingMediaId === item.id || processingMediaId === item.id) ? 'pointer-events-none' : ''}`}
+                        onClick={() => setSelectedImage(item.url)}
+                      >
+                        <img
+                          src={item.url}
+                          alt="Imagem pendente"
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                          <Maximize2 className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </div>
+                      {/* Overlay de processamento */}
+                      {(approvingMediaId === item.id || processingMediaId === item.id) && (
+                        <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-3 z-20">
+                          {approvingMediaId === item.id ? (
+                            <>
+                              <Loader2 className="w-10 h-10 text-green-400 animate-spin" />
+                              <p className="text-white text-sm font-medium">Aprovando...</p>
+                            </>
+                          ) : processingMediaId === item.id ? (
+                            <>
+                              <Sparkles className="w-10 h-10 text-purple-400 animate-pulse" />
+                              <p className="text-white text-sm font-medium">Enviando para IA analisar...</p>
+                              <p className="text-neutral-400 text-xs">Isso pode levar alguns segundos</p>
+                            </>
+                          ) : null}
+                        </div>
+                      )}
                     </div>
                   )}
                   
@@ -164,10 +240,25 @@ export function PendingMediaApproval() {
                       variant="default"
                       size="sm"
                       onClick={() => handleApprove(item.id)}
-                      className="flex-1 bg-green-600 hover:bg-green-500 text-white"
+                      disabled={approvingMediaId === item.id || processingMediaId === item.id}
+                      className="flex-1 bg-green-600 hover:bg-green-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Aprovar
+                      {approvingMediaId === item.id ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Aprovando...
+                        </>
+                      ) : processingMediaId === item.id ? (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2 animate-pulse" />
+                          Processando...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          Aprovar
+                        </>
+                      )}
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -205,6 +296,29 @@ export function PendingMediaApproval() {
           )
         })}
       </div>
+
+      {/* Lightbox para visualizar imagem ampliada */}
+      <Dialog open={!!selectedImage} onOpenChange={(open) => !open && setSelectedImage(null)}>
+        <DialogContent className="max-w-6xl max-h-[90vh] bg-neutral-900 border-neutral-700 p-0 overflow-hidden">
+          {selectedImage && (
+            <div className="relative w-full h-full flex items-center justify-center">
+              <img
+                src={selectedImage}
+                alt="Imagem ampliada"
+                className="w-full h-auto max-h-[85vh] object-contain"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-4 right-4 text-white hover:bg-black/50 bg-black/30"
+                onClick={() => setSelectedImage(null)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

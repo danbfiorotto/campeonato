@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Upload, Image as ImageIcon, CheckCircle2, Clock } from 'lucide-react'
@@ -17,7 +15,6 @@ export function PublicMediaUploader({ matchId, matchNumber }: PublicMediaUploade
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const supabase = createClient()
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -39,52 +36,25 @@ export function PublicMediaUploader({ matchId, matchNumber }: PublicMediaUploade
     setMessage(null)
 
     try {
-      // Obter ID do usuário atual (se logado)
-      const { data: { user } } = await supabase.auth.getUser()
-      const userId = user?.id || null
+      // Usar API route para upload público (funciona sem autenticação)
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('matchId', matchId)
 
-      // Gerar nome único para o arquivo
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${matchId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      const response = await fetch('/api/media/public-upload', {
+        method: 'POST',
+        body: formData,
+      })
 
-      // Upload para o Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('proofs')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
+      const result = await response.json()
 
-      if (uploadError) {
-        throw uploadError
-      }
-
-      // Obter URL pública
-      const { data: { publicUrl } } = supabase.storage
-        .from('proofs')
-        .getPublicUrl(fileName)
-
-      // Criar registro na tabela match_media (status será 'pending' automaticamente se não for admin)
-      const { error: dbError } = await supabase
-        .from('match_media')
-        .insert({
-          match_id: matchId,
-          type: 'image',
-          url: publicUrl,
-          provider: 'file',
-          uploader_user_id: userId,
-          status: 'pending' // Será auto-aprovado se for admin (via trigger)
-        })
-
-      if (dbError) {
-        // Se falhar ao criar registro, tentar deletar o arquivo do storage
-        await supabase.storage.from('proofs').remove([fileName])
-        throw dbError
+      if (!response.ok) {
+        throw new Error(result.error || result.detail || 'Erro ao fazer upload')
       }
 
       setMessage({ 
         type: 'success', 
-        text: 'Imagem enviada com sucesso! Aguardando aprovação de um administrador.' 
+        text: result.message || 'Imagem enviada com sucesso! Aguardando aprovação de um administrador.' 
       })
 
       // Limpar input

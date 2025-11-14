@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,18 +10,23 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { getSeriesFormat, getWinsNeeded, canCompleteSeries, getSeriesWinner } from '@/lib/utils/series'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { ConfettiTrigger } from '@/components/score/confetti-trigger'
+import { Pencil } from 'lucide-react'
 
 export function SeriesManagement() {
   const [series, setSeries] = useState<any[]>([])
   const [games, setGames] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingSeries, setEditingSeries] = useState<any>(null)
   const [selectedGame, setSelectedGame] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
+  const [editDate, setEditDate] = useState('')
   const [confettiTrigger, setConfettiTrigger] = useState(false)
   const [confettiTeam, setConfettiTeam] = useState<'RAC' | 'AST' | undefined>(undefined)
+  const [notifiedSeries, setNotifiedSeries] = useState<Set<string>>(new Set())
+  const initialSeriesRef = useRef<Set<string>>(new Set())
   const supabase = createClient()
 
   useEffect(() => {
@@ -44,7 +49,18 @@ export function SeriesManagement() {
         .order('name')
     ])
 
-    if (seriesRes.data) setSeries(seriesRes.data)
+    if (seriesRes.data) {
+      setSeries(seriesRes.data)
+      // Marcar séries já encerradas no carregamento inicial para não notificar
+      if (initialSeriesRef.current.size === 0) {
+        seriesRes.data.forEach((serie) => {
+          if (serie.is_completed) {
+            initialSeriesRef.current.add(serie.id)
+            setNotifiedSeries(prev => new Set(prev).add(serie.id))
+          }
+        })
+      }
+    }
     if (gamesRes.data) setGames(gamesRes.data)
     setLoading(false)
   }
@@ -70,74 +86,81 @@ export function SeriesManagement() {
     loadData()
   }
 
-  const handleCompleteSeries = async (serie: any) => {
-    const game = serie.games as any
-    const winner = getSeriesWinner(serie.score_rac, serie.score_ast, game?.slug)
-    
-    if (!winner) {
-      alert('A série ainda não pode ser encerrada. Nenhum time atingiu o número necessário de vitórias.')
-      return
-    }
+  // Detectar quando uma série foi encerrada automaticamente
+  useEffect(() => {
+    if (series.length === 0) return
 
-    // Buscar os IDs dos times
-    const { data: teams } = await supabase
-      .from('teams')
-      .select('id, name')
-      .in('name', ['RAC', 'AST'])
+    // Verificar se alguma série foi encerrada automaticamente
+    series.forEach((serie) => {
+      if (serie.is_completed && serie.winner_team_id && !notifiedSeries.has(serie.id)) {
+        const game = serie.games as any
+        const winner = getSeriesWinner(serie.score_rac, serie.score_ast, game?.slug)
+        
+        if (winner) {
+          // Marcar como notificada
+          setNotifiedSeries(prev => new Set(prev).add(serie.id))
+          
+          // Disparar confete
+          setConfettiTeam(winner as 'RAC' | 'AST')
+          setConfettiTrigger(true)
+          setTimeout(() => {
+            setConfettiTrigger(false)
+          }, 100)
 
-    const racTeam = teams?.find(t => t.name === 'RAC')
-    const astTeam = teams?.find(t => t.name === 'AST')
-    const winnerTeamId = winner === 'RAC' ? racTeam?.id : astTeam?.id
+          // Notificar Discord via webhook
+          const notifyDiscord = async () => {
+            try {
+              const seriesUrl = `${window.location.origin}/jogos/${serie.id}`
+              const score = `${serie.score_rac}-${serie.score_ast}`
+              
+              await fetch('/api/notify/discord', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  gameName: game?.name || 'Jogo',
+                  winner,
+                  score,
+                  seriesUrl,
+                  team: winner,
+                }),
+              })
+            } catch (error) {
+              console.error('Erro ao enviar webhook Discord:', error)
+            }
+          }
+          
+          notifyDiscord()
+        }
+      }
+    })
+  }, [series, notifiedSeries])
 
-    if (!winnerTeamId) {
-      alert('Erro ao encontrar o time vencedor')
-      return
-    }
+  const handleEditSeries = (serie: any) => {
+    setEditingSeries(serie)
+    setEditDate(serie.date ? new Date(serie.date).toISOString().slice(0, 16) : '')
+    setEditDialogOpen(true)
+  }
+
+  const handleUpdateSeries = async () => {
+    if (!editingSeries) return
 
     const { error } = await supabase
       .from('series')
       .update({
-        winner_team_id: winnerTeamId,
-        is_completed: true,
+        date: editDate || null,
         updated_at: new Date().toISOString()
       })
-      .eq('id', serie.id)
+      .eq('id', editingSeries.id)
 
     if (error) {
-      alert('Erro ao encerrar série: ' + error.message)
+      alert('Erro ao atualizar série: ' + error.message)
       return
     }
 
-    // Disparar confete
-    setConfettiTeam(winner as 'RAC' | 'AST')
-    setConfettiTrigger(true)
-    setTimeout(() => {
-      setConfettiTrigger(false)
-    }, 100)
-
-    // Notificar Discord via webhook
-    try {
-      const seriesUrl = `${window.location.origin}/jogos/${serie.id}`
-      const score = `${serie.score_rac}-${serie.score_ast}`
-      
-      await fetch('/api/notify/discord', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          gameName: game?.name || 'Jogo',
-          winner,
-          score,
-          seriesUrl,
-          team: winner,
-        }),
-      })
-    } catch (error) {
-      console.error('Erro ao enviar webhook Discord:', error)
-      // Não bloquear o fluxo se o webhook falhar
-    }
-
+    setEditDialogOpen(false)
+    setEditingSeries(null)
     loadData()
   }
 
@@ -208,6 +231,35 @@ export function SeriesManagement() {
         </Dialog>
       </div>
 
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="bg-neutral-900 border-neutral-700">
+          <DialogHeader>
+            <DialogTitle className="text-white font-heading">Editar Data da Série</DialogTitle>
+            <DialogDescription className="text-neutral-400">
+              Edite a data do confronto
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-date">Data (opcional)</Label>
+              <Input
+                id="edit-date"
+                type="datetime-local"
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdateSeries}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {series.map((serie) => {
           const game = serie.games as any
@@ -237,15 +289,25 @@ export function SeriesManagement() {
                       }
                     </CardDescription>
                   </div>
-                  {serie.is_completed ? (
-                    <Badge className="bg-green-600 text-white shadow-[0_0_15px_rgba(34,197,94,0.5)]">
-                      Concluído
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="border-yellow-500/50 text-yellow-400 bg-yellow-500/10">
-                      Em andamento
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {serie.is_completed ? (
+                      <Badge className="bg-green-600 text-white shadow-[0_0_15px_rgba(34,197,94,0.5)]">
+                        Concluído
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="border-yellow-500/50 text-yellow-400 bg-yellow-500/10">
+                        Em andamento
+                      </Badge>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditSeries(serie)}
+                      className="h-8 w-8 p-0 text-neutral-400 hover:text-white hover:bg-neutral-800"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -292,35 +354,6 @@ export function SeriesManagement() {
                         {getWinsNeeded(game?.slug)} vitórias
                       </span>
                     </div>
-                    {canCompleteSeries(serie.score_rac, serie.score_ast, game?.slug) && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button 
-                            variant="default" 
-                            className="w-full mt-2 bg-green-600 hover:bg-green-500 text-white"
-                          >
-                            Encerrar Série
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="bg-neutral-900 border-neutral-700">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle className="text-white">Encerrar Série</AlertDialogTitle>
-                            <AlertDialogDescription className="text-neutral-400">
-                              Tem certeza que deseja encerrar esta série? O vencedor será definido automaticamente baseado no placar atual ({serie.score_rac} x {serie.score_ast}).
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleCompleteSeries(serie)}
-                              className="bg-green-600 hover:bg-green-500"
-                            >
-                              Confirmar
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
                   </div>
                 )}
               </CardContent>

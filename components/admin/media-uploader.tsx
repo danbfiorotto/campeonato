@@ -96,7 +96,7 @@ export function MediaUploader({ matchId, onMediaAdded }: MediaUploaderProps) {
       const { data: { user } } = await supabase.auth.getUser()
 
       // Criar registro na tabela match_media (status será auto-aprovado se for admin via trigger)
-      const { error: insertError } = await supabase
+      const { data: insertedMedia, error: insertError } = await supabase
         .from('match_media')
         .insert({
           match_id: matchId,
@@ -106,9 +106,65 @@ export function MediaUploader({ matchId, onMediaAdded }: MediaUploaderProps) {
           uploader_user_id: user?.id || null,
           status: 'pending' // Será auto-aprovado se for admin (via trigger)
         })
+        .select()
+        .single()
 
       if (insertError) {
         throw insertError
+      }
+
+      console.log('[UPLOADER] Mídia inserida:', {
+        id: insertedMedia?.id,
+        status: insertedMedia?.status,
+        type: insertedMedia?.type,
+        uploader_user_id: insertedMedia?.uploader_user_id
+      })
+
+      // Verificar novamente o status (pode ter sido atualizado pelo trigger)
+      const { data: refreshedMedia } = await supabase
+        .from('match_media')
+        .select('status, type')
+        .eq('id', insertedMedia.id)
+        .single()
+
+      const finalStatus = refreshedMedia?.status || insertedMedia?.status
+      console.log('[UPLOADER] Status final após trigger:', finalStatus)
+
+      // Se for admin e a imagem foi auto-aprovada, iniciar análise automática
+      if (insertedMedia && finalStatus === 'approved' && insertedMedia.type === 'image') {
+        try {
+          console.log('[UPLOADER] ✅ Imagem auto-aprovada, iniciando análise automática...')
+          console.log('[UPLOADER] Media ID:', insertedMedia.id)
+          
+          const response = await fetch('/api/media/auto-parse', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ mediaId: insertedMedia.id }),
+          })
+
+          console.log('[UPLOADER] Response status:', response.status)
+          const result = await response.json()
+          console.log('[UPLOADER] Response data:', result)
+
+          if (response.ok) {
+            console.log('[UPLOADER] ✅ Análise automática iniciada com sucesso!')
+            console.log('[UPLOADER] Draft ID:', result.draftId)
+            alert('Imagem aprovada e análise automática iniciada! Verifique os drafts pendentes.')
+          } else {
+            console.error('[UPLOADER] ❌ Erro ao iniciar análise automática:', result.error, result.detail)
+            alert('Imagem aprovada, mas houve erro ao iniciar análise automática: ' + (result.error || result.detail))
+          }
+        } catch (error: any) {
+          console.error('[UPLOADER] ❌ Erro ao chamar API de análise:', error)
+          alert('Erro ao iniciar análise automática: ' + (error.message || 'Erro desconhecido'))
+        }
+      } else {
+        console.log('[UPLOADER] Imagem não foi auto-aprovada ou não é do tipo image:', {
+          status: insertedMedia?.status,
+          type: insertedMedia?.type
+        })
       }
 
       // Limpar input e recarregar
@@ -173,11 +229,12 @@ export function MediaUploader({ matchId, onMediaAdded }: MediaUploaderProps) {
     }
   }
 
-  // Deletar mídia
+  // Aprovar mídia
   const handleApproveMedia = async (mediaId: string) => {
     const { data: { user } } = await supabase.auth.getUser()
     
-    const { error } = await supabase
+    // Aprovar a mídia
+    const { data: updatedMedia, error } = await supabase
       .from('match_media')
       .update({
         status: 'approved',
@@ -185,10 +242,36 @@ export function MediaUploader({ matchId, onMediaAdded }: MediaUploaderProps) {
         reviewed_at: new Date().toISOString()
       })
       .eq('id', mediaId)
+      .select()
+      .single()
 
     if (error) {
       alert('Erro ao aprovar: ' + error.message)
       return
+    }
+
+    // Se for uma imagem, iniciar análise automática
+    if (updatedMedia && updatedMedia.type === 'image') {
+      try {
+        console.log('[UPLOADER] Iniciando análise automática para mídia:', mediaId)
+        const response = await fetch('/api/media/auto-parse', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ mediaId }),
+        })
+
+        const result = await response.json()
+
+        if (response.ok) {
+          console.log('[UPLOADER] ✅ Análise automática iniciada:', result.draftId)
+        } else {
+          console.error('[UPLOADER] ⚠️ Erro ao iniciar análise automática:', result.error)
+        }
+      } catch (error) {
+        console.error('[UPLOADER] ⚠️ Erro ao chamar API de análise:', error)
+      }
     }
 
     await loadMedia()

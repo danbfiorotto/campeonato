@@ -12,9 +12,10 @@ interface SeriesCardProps {
   serie: any
   game: any
   winner: any
+  matchesCount?: number
 }
 
-export function SeriesCard({ serie, game, winner }: SeriesCardProps) {
+export function SeriesCard({ serie, game, winner, matchesCount = 0 }: SeriesCardProps) {
   const isRacWinner = winner?.name === 'RAC'
   const isAstWinner = winner?.name === 'AST'
 
@@ -52,6 +53,10 @@ export function SeriesCard({ serie, game, winner }: SeriesCardProps) {
               {serie.is_completed ? (
                 <Badge className="bg-green-600 text-white shadow-[0_0_15px_rgba(34,197,94,0.5)]">
                   Concluído
+                </Badge>
+              ) : matchesCount === 0 ? (
+                <Badge variant="outline" className="border-gray-500/50 text-gray-400 bg-gray-500/10">
+                  Não iniciado
                 </Badge>
               ) : (
                 <Badge variant="outline" className="border-yellow-500/50 text-yellow-400 bg-yellow-500/10">

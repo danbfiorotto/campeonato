@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Remover setinhas (spinners) dos inputs numéricos */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -75,10 +86,9 @@
 @layer utilities {
   .neon-glow {
     text-shadow: 
-      0 0 5px currentColor,
-      0 0 10px currentColor,
-      0 0 15px currentColor,
-      0 0 20px currentColor;
+      0 0 4px currentColor,
+      0 0 8px currentColor,
+      0 0 12px rgba(255, 255, 255, 0.3);
   }
 
   .neon-border {

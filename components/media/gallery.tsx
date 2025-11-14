@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Video, ExternalLink } from 'lucide-react'
+import { X, Video, ExternalLink, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
@@ -19,19 +19,20 @@ interface MatchMedia {
 interface GalleryProps {
   media: MatchMedia[]
   matchNumber?: number
+  isAdmin?: boolean
 }
 
-export function Gallery({ media, matchNumber }: GalleryProps) {
+export function Gallery({ media, matchNumber, isAdmin = false }: GalleryProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
   if (!media || media.length === 0) {
     return null
   }
 
-  // Filtrar apenas mídia aprovada (ou sem status, para retrocompatibilidade)
-  const approvedMedia = media.filter(m => !m.status || m.status === 'approved')
-  const images = approvedMedia.filter(m => m.type === 'image')
-  const clips = approvedMedia.filter(m => m.type === 'clip')
+  // A query já filtra no servidor, mas mantemos validação extra aqui
+  // Admins recebem aprovadas + pendentes, público recebe apenas aprovadas
+  const images = media.filter(m => m.type === 'image')
+  const clips = media.filter(m => m.type === 'clip')
 
   return (
     <div className="space-y-4">
@@ -41,20 +42,43 @@ export function Gallery({ media, matchNumber }: GalleryProps) {
             Prints {matchNumber && `- Partida ${matchNumber}`}
           </h4>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {images.map((item) => (
-              <div
-                key={item.id}
-                className="relative aspect-video bg-neutral-800 rounded-md overflow-hidden border border-neutral-700 cursor-pointer group"
-                onClick={() => setSelectedImage(item.url)}
-              >
-                <img
-                  src={item.url}
-                  alt={`Prova da partida ${matchNumber || ''}`}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
-              </div>
-            ))}
+            {images.map((item) => {
+              const isPending = item.status === 'pending'
+              
+              return (
+                <div
+                  key={item.id}
+                  className={`relative aspect-video bg-neutral-800 rounded-md overflow-hidden border cursor-pointer group ${
+                    isPending 
+                      ? 'border-yellow-500/50 bg-yellow-500/5' 
+                      : 'border-neutral-700'
+                  }`}
+                  onClick={() => setSelectedImage(item.url)}
+                >
+                  <img
+                    src={item.url}
+                    alt={`Prova da partida ${matchNumber || ''}`}
+                    className={`w-full h-full object-cover ${
+                      isPending ? 'opacity-75' : ''
+                    }`}
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+                  
+                  {/* Indicador de pendente */}
+                  {isPending && (
+                    <div className="absolute top-2 left-2 z-10">
+                      <Badge 
+                        variant="outline" 
+                        className="bg-yellow-500/20 border-yellow-500/50 text-yellow-400 text-xs flex items-center gap-1"
+                      >
+                        <Clock className="w-3 h-3" />
+                        Aguardando aprovação
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

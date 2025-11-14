@@ -19,6 +19,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import Image from 'next/image'
+import { Trash2, Plus, UserPlus } from 'lucide-react'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 
 export function PlayersManagement() {
   const [players, setPlayers] = useState<any[]>([])
@@ -28,7 +30,11 @@ export function PlayersManagement() {
   const [profileLoading, setProfileLoading] = useState(true)
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [aliasDialogOpen, setAliasDialogOpen] = useState(false)
   const [editingPlayer, setEditingPlayer] = useState<any>(null)
+  const [selectedPlayerForAlias, setSelectedPlayerForAlias] = useState<any>(null)
+  const [playerAliases, setPlayerAliases] = useState<Record<string, any[]>>({})
+  const [newAlias, setNewAlias] = useState('')
   const [playerName, setPlayerName] = useState('')
   const [playerTeam, setPlayerTeam] = useState('')
   const [selectedGames, setSelectedGames] = useState<string[]>([])
@@ -112,16 +118,28 @@ export function PlayersManagement() {
       setPlayers(playersRes.data)
       // Carregar jogos de cada jogador
       const playerGamesMap: Record<string, any[]> = {}
+      const playerAliasesMap: Record<string, any[]> = {}
       for (const player of playersRes.data) {
-        const { data: pgData } = await supabase
-          .from('player_games')
-          .select('game_id')
-          .eq('player_id', player.id)
-        if (pgData) {
-          playerGamesMap[player.id] = pgData.map(pg => pg.game_id)
+        const [pgData, aliasData] = await Promise.all([
+          supabase
+            .from('player_games')
+            .select('game_id')
+            .eq('player_id', player.id),
+          supabase
+            .from('player_aliases')
+            .select('*')
+            .eq('player_id', player.id)
+            .order('alias')
+        ])
+        if (pgData.data) {
+          playerGamesMap[player.id] = pgData.data.map(pg => pg.game_id)
+        }
+        if (aliasData.data) {
+          playerAliasesMap[player.id] = aliasData.data
         }
       }
       setPlayerGames(playerGamesMap)
+      setPlayerAliases(playerAliasesMap)
     }
     if (teamsRes.data) setTeams(teamsRes.data)
     if (gamesRes.data) setGames(gamesRes.data)
@@ -348,6 +366,57 @@ export function PlayersManagement() {
     )
   }
 
+  const handleOpenAliasDialog = (player: any) => {
+    setSelectedPlayerForAlias(player)
+    setNewAlias('')
+    setAliasDialogOpen(true)
+  }
+
+  const handleAddAlias = async () => {
+    if (!selectedPlayerForAlias || !newAlias.trim()) {
+      alert('Preencha o alias')
+      return
+    }
+
+    const aliasKey = newAlias.trim().toLowerCase()
+    
+    // Verificar se já existe
+    const existingAliases = playerAliases[selectedPlayerForAlias.id] || []
+    if (existingAliases.some((a: any) => a.alias.toLowerCase() === aliasKey)) {
+      alert('Este alias já existe para este jogador')
+      return
+    }
+
+    const { error } = await supabase
+      .from('player_aliases')
+      .insert({
+        player_id: selectedPlayerForAlias.id,
+        alias: aliasKey,
+      })
+
+    if (error) {
+      alert('Erro ao adicionar alias: ' + error.message)
+      return
+    }
+
+    setNewAlias('')
+    loadData()
+  }
+
+  const handleDeleteAlias = async (aliasId: string, playerId: string) => {
+    const { error } = await supabase
+      .from('player_aliases')
+      .delete()
+      .eq('id', aliasId)
+
+    if (error) {
+      alert('Erro ao deletar alias: ' + error.message)
+      return
+    }
+
+    loadData()
+  }
+
   const racPlayers = players.filter(p => {
     const racTeam = teams.find(t => t.name === 'RAC')
     return p.team_id === racTeam?.id
@@ -526,6 +595,7 @@ export function PlayersManagement() {
                   <TableRow className="border-neutral-700">
                     <TableHead className="text-neutral-300 font-heading">Nome</TableHead>
                     <TableHead className="text-neutral-300 font-heading">Jogos</TableHead>
+                    <TableHead className="text-neutral-300 font-heading">Aliases</TableHead>
                     <TableHead className="text-right text-neutral-300 font-heading">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -553,10 +623,36 @@ export function PlayersManagement() {
                           )}
                         </div>
                       </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {playerAliases[player.id] && playerAliases[player.id].length > 0 ? (
+                            playerAliases[player.id].map((alias: any) => (
+                              <Badge 
+                                key={alias.id}
+                                variant="outline" 
+                                className="text-xs bg-blue-500/10 border-blue-500/30 text-blue-300"
+                              >
+                                {alias.alias}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-xs text-neutral-500">Nenhum alias</span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           {canManagePlayer(player) ? (
                             <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenAliasDialog(player)}
+                                className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
+                              >
+                                <UserPlus className="w-4 h-4 mr-1" />
+                                Aliases
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -618,6 +714,7 @@ export function PlayersManagement() {
                   <TableRow className="border-neutral-700">
                     <TableHead className="text-neutral-300 font-heading">Nome</TableHead>
                     <TableHead className="text-neutral-300 font-heading">Jogos</TableHead>
+                    <TableHead className="text-neutral-300 font-heading">Aliases</TableHead>
                     <TableHead className="text-right text-neutral-300 font-heading">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -645,10 +742,36 @@ export function PlayersManagement() {
                           )}
                         </div>
                       </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {playerAliases[player.id] && playerAliases[player.id].length > 0 ? (
+                            playerAliases[player.id].map((alias: any) => (
+                              <Badge 
+                                key={alias.id}
+                                variant="outline" 
+                                className="text-xs bg-red-500/10 border-red-500/30 text-red-300"
+                              >
+                                {alias.alias}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-xs text-neutral-500">Nenhum alias</span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           {canManagePlayer(player) ? (
                             <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenAliasDialog(player)}
+                                className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
+                              >
+                                <UserPlus className="w-4 h-4 mr-1" />
+                                Aliases
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -685,6 +808,104 @@ export function PlayersManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog de Gerenciamento de Aliases */}
+      <Dialog open={aliasDialogOpen} onOpenChange={setAliasDialogOpen}>
+        <DialogContent className="bg-neutral-900 border-neutral-700 max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-white font-heading">
+              Gerenciar Aliases - {selectedPlayerForAlias?.name}
+            </DialogTitle>
+            <DialogDescription className="text-neutral-400">
+              Adicione ou remova aliases (apelidos) para este jogador. Os aliases são usados para identificar jogadores automaticamente nos placares.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Lista de aliases existentes */}
+            <div className="space-y-2">
+              <Label className="text-white">Aliases Cadastrados</Label>
+              {selectedPlayerForAlias && playerAliases[selectedPlayerForAlias.id] && playerAliases[selectedPlayerForAlias.id].length > 0 ? (
+                <div className="flex flex-wrap gap-2 p-3 bg-neutral-800 rounded-lg border border-neutral-700">
+                  {playerAliases[selectedPlayerForAlias.id].map((alias: any) => (
+                    <div
+                      key={alias.id}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 border border-blue-500/50 rounded-md"
+                    >
+                      <span className="text-blue-300 text-sm">{alias.alias}</span>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-neutral-900 border-neutral-700">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-white">Deletar Alias</AlertDialogTitle>
+                            <AlertDialogDescription className="text-neutral-400">
+                              Tem certeza que deseja deletar o alias "{alias.alias}"? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteAlias(alias.id, selectedPlayerForAlias.id)}
+                              className="bg-red-600 hover:bg-red-500 text-white"
+                            >
+                              Deletar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-3 bg-neutral-800 rounded-lg border border-neutral-700 text-neutral-500 text-sm text-center">
+                  Nenhum alias cadastrado
+                </div>
+              )}
+            </div>
+
+            {/* Adicionar novo alias */}
+            <div className="space-y-2">
+              <Label htmlFor="new-alias" className="text-white">Adicionar Novo Alias</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="new-alias"
+                  value={newAlias}
+                  onChange={(e) => setNewAlias(e.target.value)}
+                  placeholder="Digite o nickname/apelido do jogador"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleAddAlias()
+                    }
+                  }}
+                />
+                <Button
+                  onClick={handleAddAlias}
+                  disabled={!newAlias.trim()}
+                  className="bg-blue-600 hover:bg-blue-500 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar
+                </Button>
+              </div>
+              <p className="text-xs text-neutral-500">
+                O alias será convertido para minúsculas automaticamente
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAliasDialogOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -6,6 +6,8 @@ import { HeroHeader } from '@/components/layout/hero-header'
 import { Calendar, Clock, Gamepad2 } from 'lucide-react'
 import { getSeriesFormat, getWinsNeeded } from '@/lib/utils/series'
 import { SeriesCard } from '@/components/series/series-card'
+import { InteractiveCalendar } from '@/components/schedule/interactive-calendar'
+import { UnscheduledSeries } from '@/components/schedule/unscheduled-series'
 
 export default async function Home() {
   const supabase = await createClient()
@@ -39,6 +41,17 @@ export default async function Home() {
   const astTeam = teams?.find(t => t.name === 'AST')
   const racWins = series?.filter(s => s.winner_team_id === racTeam?.id).length || 0
   const astWins = series?.filter(s => s.winner_team_id === astTeam?.id).length || 0
+  
+  // Get matches count for each series
+  const { data: allMatches } = await supabase
+    .from('matches')
+    .select('series_id')
+  
+  const matchesBySeries = new Map<string, number>()
+  allMatches?.forEach((match: any) => {
+    const count = matchesBySeries.get(match.series_id) || 0
+    matchesBySeries.set(match.series_id, count + 1)
+  })
   
   // Get top players (MVP and wins)
   const { data: matches } = await supabase
@@ -96,101 +109,21 @@ export default async function Home() {
               Agenda
             </h2>
             <p className="text-gray-400 text-center mb-8">
-              Próximos confrontos
+              Calendário de jogos e séries agendadas
             </p>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {upcomingSeries.map((serie) => {
-                const game = serie.games as any
-                const serieDate = serie.date ? new Date(serie.date) : null
-                const isToday = serieDate && 
-                  serieDate.toDateString() === new Date().toDateString()
-                const isPast = serieDate && serieDate < new Date() && !isToday
-                
-                return (
-                  <Link 
-                    key={serie.id} 
-                    href={`/jogos/${serie.id}`}
-                    className="group"
-                  >
-                    <Card className="neon-card h-full transition-all duration-300 hover:scale-105 border-blue-500/30 hover:border-blue-500/50">
-                      <CardHeader>
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Gamepad2 className="w-5 h-5 text-blue-400" />
-                              <CardTitle className="text-white text-xl font-heading">
-                                {game?.name || 'Jogo'}
-                              </CardTitle>
-                            </div>
-                            <CardDescription className="text-gray-400">
-                              {game?.slug || ''}
-                            </CardDescription>
-                          </div>
-                          <Badge 
-                            variant="outline" 
-                            className={`${
-                              isToday 
-                                ? 'border-yellow-500/50 text-yellow-400 bg-yellow-500/10' 
-                                : isPast
-                                ? 'border-gray-500/50 text-gray-400 bg-gray-500/10'
-                                : 'border-blue-500/50 text-blue-400 bg-blue-500/10'
-                            }`}
-                          >
-                            {isToday ? 'Hoje' : isPast ? 'Atrasado' : 'Agendado'}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {serieDate ? (
-                            <>
-                              <div className="flex items-center gap-2 text-neutral-300">
-                                <Calendar className="w-4 h-4 text-blue-400" />
-                                <span className="text-sm">
-                                  {serieDate.toLocaleDateString('pt-BR', {
-                                    weekday: 'long',
-                                    day: 'numeric',
-                                    month: 'long',
-                                    year: 'numeric'
-                                  })}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-neutral-300">
-                                <Clock className="w-4 h-4 text-blue-400" />
-                                <span className="text-sm">
-                                  {serieDate.toLocaleTimeString('pt-BR', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </span>
-                              </div>
-                            </>
-                          ) : (
-                            <div className="flex items-center gap-2 text-neutral-400">
-                              <Calendar className="w-4 h-4" />
-                              <span className="text-sm">Data a definir</span>
-                            </div>
-                          )}
-                          
-                          <div className="pt-2 border-t border-neutral-700">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-neutral-400">RAC</span>
-                              <span className="text-white font-bold text-lg">VS</span>
-                              <span className="text-sm text-neutral-400">AST</span>
-                            </div>
-                          </div>
-                          
-                          <div className="mt-4 text-blue-400 text-sm group-hover:text-blue-300 transition-colors flex items-center gap-1">
-                            Ver detalhes
-                            <span className="group-hover:translate-x-1 transition-transform">→</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                )
-              })}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+              {/* Calendário Interativo */}
+              <div className="lg:col-span-2">
+                <InteractiveCalendar series={upcomingSeries} />
+              </div>
+              
+              {/* Séries sem data agendada */}
+              <div className="lg:col-span-1">
+                <UnscheduledSeries 
+                  series={upcomingSeries.filter(s => !s.date)} 
+                />
+              </div>
             </div>
           </div>
         )}
@@ -208,6 +141,7 @@ export default async function Home() {
             {series?.map((serie) => {
               const game = serie.games as any
               const winner = serie.teams as any
+              const matchesCount = matchesBySeries.get(serie.id) || 0
               
               return (
                 <SeriesCard 
@@ -215,6 +149,7 @@ export default async function Home() {
                   serie={serie}
                   game={game}
                   winner={winner}
+                  matchesCount={matchesCount}
                 />
               )
             })}

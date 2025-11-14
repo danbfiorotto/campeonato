@@ -75,7 +75,7 @@ export default async function SerieDetailPage({
     isAdmin = profile?.role === 'super' || profile?.role === 'rac' || profile?.role === 'ast'
   }
 
-  // Carregar mídia aprovada (público) ou todas (admin)
+  // Carregar mídia aprovada (público) ou aprovadas + pendentes (admin)
   const mediaQuery = supabase
     .from('match_media')
     .select('*')
@@ -85,6 +85,9 @@ export default async function SerieDetailPage({
   if (!isAdmin) {
     // Público vê apenas mídia aprovada
     mediaQuery.eq('status', 'approved')
+  } else {
+    // Admin vê aprovadas e pendentes (não rejeitadas)
+    mediaQuery.in('status', ['approved', 'pending'])
   }
 
   const { data: allMedia } = await mediaQuery
@@ -198,10 +201,10 @@ export default async function SerieDetailPage({
       {allMedia && allMedia.length > 0 && (
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Provas (Prints & Clipes)</CardTitle>
+            <CardTitle>Prova Placar</CardTitle>
           </CardHeader>
           <CardContent>
-            <Gallery media={allMedia} />
+            <Gallery media={allMedia} isAdmin={isAdmin} />
           </CardContent>
         </Card>
       )}
@@ -260,13 +263,11 @@ export default async function SerieDetailPage({
                       </div>
                     )}
 
-                    {/* Upload público de prints */}
-                    {!isAdmin && (
-                      <PublicMediaUploader 
-                        matchId={match.id} 
-                        matchNumber={match.match_number} 
-                      />
-                    )}
+                    {/* Upload público de prints - disponível para todos */}
+                    <PublicMediaUploader 
+                      matchId={match.id} 
+                      matchNumber={match.match_number} 
+                    />
                   </div>
                 </CardContent>
               </Card>
