@@ -110,6 +110,16 @@ export function TeamsWithFilter({ teamStats, games }: TeamsWithFilterProps) {
                   <div className={`text-center p-4 rounded-lg ${
                     isRac ? 'bg-orange-500/10 border border-orange-500/30' : 'bg-red-500/10 border border-red-500/30'
                   }`}>
+                    <TrendingUp className={`w-6 h-6 mx-auto mb-2 ${
+                      isRac ? 'text-orange-400' : 'text-red-400'
+                    }`} />
+                    <div className="text-2xl font-bold text-white font-heading">{team.matchWinRate}%</div>
+                    <div className="text-xs text-neutral-400 mt-1">Win Rate</div>
+                  </div>
+                  
+                  <div className={`text-center p-4 rounded-lg ${
+                    isRac ? 'bg-orange-500/10 border border-orange-500/30' : 'bg-red-500/10 border border-red-500/30'
+                  }`}>
                     <Trophy className={`w-6 h-6 mx-auto mb-2 ${
                       isRac ? 'text-orange-400' : 'text-red-400'
                     }`} />
@@ -125,16 +135,6 @@ export function TeamsWithFilter({ teamStats, games }: TeamsWithFilterProps) {
                     }`} />
                     <div className="text-2xl font-bold text-white font-heading">{team.matchWins}</div>
                     <div className="text-xs text-neutral-400 mt-1">Partidas</div>
-                  </div>
-                  
-                  <div className={`text-center p-4 rounded-lg ${
-                    isRac ? 'bg-orange-500/10 border border-orange-500/30' : 'bg-red-500/10 border border-red-500/30'
-                  }`}>
-                    <TrendingUp className={`w-6 h-6 mx-auto mb-2 ${
-                      isRac ? 'text-orange-400' : 'text-red-400'
-                    }`} />
-                    <div className="text-2xl font-bold text-white font-heading">{team.matchWinRate}%</div>
-                    <div className="text-xs text-neutral-400 mt-1">Win Rate</div>
                   </div>
                   
                   <div className={`text-center p-4 rounded-lg ${
@@ -196,17 +196,18 @@ export function TeamsWithFilter({ teamStats, games }: TeamsWithFilterProps) {
                             const winRate = player.gamesPlayed > 0 
                               ? ((player.wins / player.gamesPlayed) * 100).toFixed(0) 
                               : '0'
+                            const isMVP = team.mvpPlayerId === player.id
                             
                             return (
                               <TableRow 
                                 key={player.id} 
                                 className={`border-neutral-800 hover:bg-neutral-800/50 ${
-                                  index === 0 && player.wins > 0 ? 'bg-gradient-to-r from-yellow-500/10 to-transparent' : ''
+                                  isMVP ? 'bg-gradient-to-r from-yellow-500/10 to-transparent' : ''
                                 }`}
                               >
                                 <TableCell className="font-medium text-white">
                                   <div className="flex items-center gap-2">
-                                    {index === 0 && player.wins > 0 && (
+                                    {isMVP && (
                                       <span className="text-yellow-400">⭐</span>
                                     )}
                                     {player.name}
@@ -282,6 +283,8 @@ export function TeamsWithFilter({ teamStats, games }: TeamsWithFilterProps) {
     </>
   )
 }
+
+
 
 
 

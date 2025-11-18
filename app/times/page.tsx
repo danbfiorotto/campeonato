@@ -60,13 +60,32 @@ export default async function TimesPage() {
       )
     `)
   
-  // Calculate player wins and MVPs
+  // Get player match stats for K/D calculation
+  const { data: playerStatsData } = await supabase
+    .from('player_match_stats')
+    .select(`
+      player_id,
+      kills,
+      deaths,
+      assists,
+      players (
+        id,
+        name,
+        team_id
+      )
+    `)
+  
+  // Calculate player wins, MVPs, and K/D
   const playerStats = new Map<string, { 
     name: string; 
     wins: number; 
     mvps: number; 
     teamId: string;
     gamesPlayed: number;
+    totalKills: number;
+    totalDeaths: number;
+    totalAssists: number;
+    kd: number;
   }>()
   
   players?.forEach(player => {
@@ -76,6 +95,10 @@ export default async function TimesPage() {
       mvps: 0,
       teamId: player.team_id,
       gamesPlayed: 0,
+      totalKills: 0,
+      totalDeaths: 0,
+      totalAssists: 0,
+      kd: 0,
     })
   })
   
@@ -99,6 +122,40 @@ export default async function TimesPage() {
       }
     })
   })
+
+  // Add stats from player_match_stats
+  playerStatsData?.forEach((stat: any) => {
+    const playerId = stat.player_id
+    const player = stat.players as any
+    
+    if (!playerId || !player) return
+
+    const current = playerStats.get(playerId) || {
+      name: player.name || '',
+      wins: 0,
+      mvps: 0,
+      teamId: player.team_id || '',
+      gamesPlayed: 0,
+      totalKills: 0,
+      totalDeaths: 0,
+      totalAssists: 0,
+      kd: 0,
+    }
+    
+    if (player.name) {
+      current.name = player.name
+    }
+    
+    current.totalKills += stat.kills || 0
+    current.totalDeaths += stat.deaths || 0
+    current.totalAssists += stat.assists || 0
+    
+    // Calculate K/D: kills / deaths
+    const deaths = Math.max(1, current.totalDeaths) // Evitar divisão por zero
+    current.kd = current.totalKills / deaths
+    
+    playerStats.set(playerId, current)
+  })
   
   // Get all games
   const { data: games } = await supabase
@@ -116,9 +173,20 @@ export default async function TimesPage() {
     const teamPlayers = players?.filter(p => p.team_id === team.id) || []
     const playersWithStats = teamPlayers.map(p => {
       const playerGames = (p.player_games as any[])?.map((pg: any) => pg.games) || []
+      const stats = playerStats.get(p.id) || {
+        name: p.name,
+        wins: 0,
+        mvps: 0,
+        teamId: p.team_id,
+        gamesPlayed: 0,
+        totalKills: 0,
+        totalDeaths: 0,
+        totalAssists: 0,
+        kd: 0,
+      }
       return {
         ...p,
-        ...playerStats.get(p.id),
+        ...stats,
         games: playerGames,
       }
     }).sort((a, b) => {
@@ -127,6 +195,31 @@ export default async function TimesPage() {
       if (b.mvps !== a.mvps) return b.mvps - a.mvps
       return b.gamesPlayed - a.gamesPlayed
     })
+
+    // Find MVP of THIS SPECIFIC TEAM using same logic as home page (most MVPs, tiebreaker by K/D)
+    // Only considers players from this team, not all players
+    const sortByMVPsWithKD = (a: any, b: any) => {
+      if (b.mvps !== a.mvps) return b.mvps - a.mvps
+      return b.kd - a.kd // Em caso de empate, melhor K/D
+    }
+    
+    const sortByKD = (a: any, b: any) => {
+      return b.kd - a.kd
+    }
+    
+    // First, try to find MVP among players with at least one MVP
+    let teamMVP = playersWithStats
+      .filter(p => p.mvps > 0)
+      .sort(sortByMVPsWithKD)[0]
+    
+    // If no player has MVP, select the one with best K/D
+    if (!teamMVP) {
+      teamMVP = playersWithStats
+        .filter(p => p.totalKills > 0 || p.totalDeaths > 0) // Pelo menos uma estatística
+        .sort(sortByKD)[0]
+    }
+    
+    const mvpPlayerId = teamMVP?.id || null
     
     // Calculate total MVPs for team
     const totalMVPs = playersWithStats.reduce((sum, p) => sum + (p.mvps || 0), 0)
@@ -153,6 +246,7 @@ export default async function TimesPage() {
       totalMVPs,
       players: playersWithStats,
       winsByGame: Array.from(winsByGame.entries()).map(([game, wins]) => ({ game, wins })),
+      mvpPlayerId,
     }
   })
 

@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { AnimatedHeroScore } from './animated-hero-score'
 import { ScoreChangeNotification } from '@/components/score/score-change-notification'
+import { GameMedal } from './game-medal'
 
 export async function HeroHeader() {
   const supabase = await createClient()
@@ -24,6 +25,22 @@ export async function HeroHeader() {
   const astTeam = teams?.find(t => t.name === 'AST')
   const racWins = series?.filter(s => s.winner_team_id === racTeam?.id).length || 0
   const astWins = series?.filter(s => s.winner_team_id === astTeam?.id).length || 0
+
+  // Get games won by each team (for medals)
+  const racWonSeries = series?.filter(s => s.winner_team_id === racTeam?.id && s.is_completed) || []
+  const astWonSeries = series?.filter(s => s.winner_team_id === astTeam?.id && s.is_completed) || []
+  
+  const racWonGames = racWonSeries.map(s => ({
+    slug: (s.games as any)?.slug || '',
+    name: (s.games as any)?.name || ''
+  })).filter(g => g.slug) // Remove duplicates by slug
+  const uniqueRacGames = Array.from(new Map(racWonGames.map(g => [g.slug, g])).values())
+  
+  const astWonGames = astWonSeries.map(s => ({
+    slug: (s.games as any)?.slug || '',
+    name: (s.games as any)?.name || ''
+  })).filter(g => g.slug) // Remove duplicates by slug
+  const uniqueAstGames = Array.from(new Map(astWonGames.map(g => [g.slug, g])).values())
 
   return (
     <div className="relative w-full min-h-[900px] sm:min-h-[1000px] md:min-h-[1100px] lg:min-h-[1200px] bg-dark-futuristic overflow-hidden" style={{ zIndex: 1 }}>
@@ -60,11 +77,12 @@ export async function HeroHeader() {
             </div>
           </div>
 
-          {/* Team Logos and Score - Separado e mais abaixo */}
+          {/* Team Logos, Score, Subtitle e Medalhas */}
           <div className="flex flex-col items-center space-y-6 md:space-y-8 w-full mt-48 md:mt-64 lg:mt-80 xl:mt-96">
-            <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-8 lg:gap-16 w-full flex-wrap">
+            {/* Logos + Placar em GRID */}
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center w-full max-w-4xl gap-4 sm:gap-6 md:gap-8 lg:gap-16 mx-auto">
               {/* RAC Logo */}
-              <div className="flex flex-col items-center space-y-2 md:space-y-3 order-1">
+              <div className="flex flex-col items-center space-y-2 md:space-y-3">
                 <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-orange-500/70 shadow-[0_0_40px_rgba(249,115,22,0.8)] logo-hover">
                   <Image
                     src="/logo-rac.jpeg"
@@ -76,14 +94,16 @@ export async function HeroHeader() {
                     priority
                   />
                 </div>
-                <div className="text-xs sm:text-sm md:text-base text-orange-400 font-semibold tracking-wider hidden sm:block">RAC</div>
+                <div className="text-xs sm:text-sm md:text-base text-orange-400 font-semibold tracking-wider hidden sm:block">
+                  RAC
+                </div>
               </div>
 
               {/* Score Display */}
               <AnimatedHeroScore racWins={racWins} astWins={astWins} />
 
               {/* AST Logo */}
-              <div className="flex flex-col items-center space-y-2 md:space-y-3 order-3">
+              <div className="flex flex-col items-center space-y-2 md:space-y-3">
                 <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-red-500/70 shadow-[0_0_40px_rgba(220,38,38,0.8)] logo-hover">
                   <Image
                     src="/logo-ast.jpeg"
@@ -95,12 +115,14 @@ export async function HeroHeader() {
                     priority
                   />
                 </div>
-                <div className="text-xs sm:text-sm md:text-base text-red-400 font-semibold tracking-wider hidden sm:block">AST</div>
+                <div className="text-xs sm:text-sm md:text-base text-red-400 font-semibold tracking-wider hidden sm:block">
+                  AST
+                </div>
               </div>
             </div>
 
             {/* Subtitle - abaixo do placar */}
-            <div className="mt-6 md:mt-8 text-center px-4">
+            <div className="mt-6 md:mt-8 text-center px-4 w-full">
               <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-neutral-200 tracking-widest font-light italic relative inline-block">
                 <span className="relative z-10">5 JOGOS. 2 TIMES. 1 VENCEDOR.</span>
                 <span className="absolute inset-0 bg-gradient-to-r from-orange-500/20 via-transparent to-red-500/20 blur-xl -z-0"></span>
@@ -108,6 +130,44 @@ export async function HeroHeader() {
               <div className="mt-4 flex items-center justify-center gap-4">
                 <div className="h-px w-16 bg-gradient-to-r from-transparent to-orange-500/50"></div>
                 <div className="h-px w-16 bg-gradient-to-l from-transparent to-red-500/50"></div>
+              </div>
+            </div>
+
+            {/* Medalhas alinhadas com os logos */}
+            <div className="mt-8 md:mt-10 grid grid-cols-[1fr_auto_1fr] items-center w-full max-w-4xl mx-auto gap-[82px] sm:gap-[114px] md:gap-[163px] lg:gap-[212px] xl:gap-[245px]">
+              {/* Medalhas RAC */}
+              <div className="flex justify-center ">
+                <div className="flex items-center gap-2 sm:gap-3 -translate-x-[10px]">
+                  {uniqueRacGames.length > 0 ? (
+                    uniqueRacGames.map((game) => (
+                      <GameMedal
+                        key={game.slug}
+                        gameSlug={game.slug}
+                        gameName={game.name}
+                        teamColor="orange"
+                      />
+                    ))
+                  ) : null}
+                </div>
+              </div>
+
+              {/* coluna do meio vazia, embaixo do placar */}
+              <div />
+
+              {/* Medalhas AST */}
+              <div className="flex justify-center">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {uniqueAstGames.length > 0 ? (
+                    uniqueAstGames.map((game) => (
+                      <GameMedal
+                        key={game.slug}
+                        gameSlug={game.slug}
+                        gameName={game.name}
+                        teamColor="red"
+                      />
+                    ))
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>

@@ -42,8 +42,10 @@ export function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/" className="text-xl font-bold text-white neon-glow font-heading">
-              RAC vs AST
+            <Link href="/" className="text-xl font-bold font-heading">
+              <span className="text-orange-500 neon-glow">RAC</span>
+              <span className="text-white mx-2">vs</span>
+              <span className="text-red-500 neon-glow">AST</span>
             </Link>
             {/* Desktop Menu */}
             <div className="hidden md:flex gap-6">

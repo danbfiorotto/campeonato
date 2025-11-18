@@ -391,11 +391,13 @@ export async function POST(req: Request) {
           onConflict: 'match_id,player_id',
         })
 
-        // Calcular KDA
+        // Calcular K/D: kills / deaths (sem assists)
         const deaths = Math.max(1, p.deaths || 0)
-        const kda = ((p.kills || 0) + (p.assists || 0)) / deaths
+        const kda = (p.kills || 0) / deaths
 
         // Inserir/atualizar player_match_stats
+        // Salvar dados extras do jogador (se existirem)
+        const playerExtra = p.extra || {}
         await supabase.from('player_match_stats').upsert({
           match_id: match.id,
           player_id: playerId,
@@ -404,7 +406,7 @@ export async function POST(req: Request) {
           deaths: p.deaths || 0,
           assists: p.assists || 0,
           kda: kda,
-          extra: {},
+          extra: playerExtra,
         }, {
           onConflict: 'match_id,player_id',
         })

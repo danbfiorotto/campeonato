@@ -20,7 +20,7 @@ interface Player {
 
 interface HallCardsProps {
   players: Player[]
-  type: 'mvp' | 'matches'
+  type: 'mvp' | 'matches' | 'kills' | 'assists' | 'deaths' | 'kda'
   selectedGame: string
 }
 
@@ -102,11 +102,18 @@ export function HallCards({ players, type, selectedGame }: HallCardsProps) {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-neutral-400 text-sm">
-                      {type === 'mvp' ? 'MVPs' : 'Partidas jogadas'}:
+                      {type === 'mvp' ? 'MVPs' : 
+                       type === 'matches' ? 'Partidas jogadas' :
+                       type === 'kills' ? 'Total de Kills' :
+                       type === 'assists' ? 'Total de Assists' :
+                       type === 'deaths' ? 'Total de Deaths' :
+                       'KDA Médio'}:
                     </span>
                     <div className="flex items-center gap-2">
                       {type === 'mvp' && <Star className="w-4 h-4 text-yellow-400" />}
-                      <span className="text-2xl font-bold text-white">{item.count}</span>
+                      <span className="text-2xl font-bold text-white">
+                        {type === 'kda' ? item.count.toFixed(2) : item.count}
+                      </span>
                     </div>
                   </div>
 

@@ -70,3 +70,5 @@ COMMENT ON COLUMN public.auto_parse_queue.status IS 'Status do processamento: pe
 
 
 
+
+

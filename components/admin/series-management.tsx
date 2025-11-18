@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { getSeriesFormat, getWinsNeeded, canCompleteSeries, getSeriesWinner } from '@/lib/utils/series'
 import { ConfettiTrigger } from '@/components/score/confetti-trigger'
-import { Pencil } from 'lucide-react'
+import { Pencil, X } from 'lucide-react'
 
 export function SeriesManagement() {
   const [series, setSeries] = useState<any[]>([])
@@ -68,11 +68,20 @@ export function SeriesManagement() {
   const handleCreateSeries = async () => {
     if (!selectedGame) return
 
+    // Converter a data do input (timezone local) para ISO string (UTC)
+    let dateToSave = null
+    if (selectedDate) {
+      // Criar data no timezone local a partir do input
+      const localDate = new Date(selectedDate)
+      // Converter para ISO string (que será salva como UTC no banco)
+      dateToSave = localDate.toISOString()
+    }
+
     const { error } = await supabase
       .from('series')
       .insert({
         game_id: selectedGame,
-        date: selectedDate || null,
+        date: dateToSave,
       })
 
     if (error) {
@@ -139,17 +148,40 @@ export function SeriesManagement() {
 
   const handleEditSeries = (serie: any) => {
     setEditingSeries(serie)
-    setEditDate(serie.date ? new Date(serie.date).toISOString().slice(0, 16) : '')
+    if (serie.date) {
+      // Converter de UTC para timezone local para o input datetime-local
+      const date = new Date(serie.date)
+      // Ajustar para o timezone local (o input datetime-local espera no timezone local)
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      setEditDate(`${year}-${month}-${day}T${hours}:${minutes}`)
+    } else {
+      setEditDate('')
+    }
     setEditDialogOpen(true)
   }
 
   const handleUpdateSeries = async () => {
     if (!editingSeries) return
 
+    // Converter a data do input (timezone local) para ISO string (UTC)
+    // O input datetime-local retorna no formato YYYY-MM-DDTHH:mm sem timezone
+    // Precisamos criar uma data no timezone local e converter para ISO
+    let dateToSave = null
+    if (editDate) {
+      // Criar data no timezone local a partir do input
+      const localDate = new Date(editDate)
+      // Converter para ISO string (que será salva como UTC no banco)
+      dateToSave = localDate.toISOString()
+    }
+
     const { error } = await supabase
       .from('series')
       .update({
-        date: editDate || null,
+        date: dateToSave,
         updated_at: new Date().toISOString()
       })
       .eq('id', editingSeries.id)
@@ -218,6 +250,7 @@ export function SeriesManagement() {
                   type="datetime-local"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
+                  className="[&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:contrast-100"
                 />
               </div>
             </div>
@@ -243,12 +276,32 @@ export function SeriesManagement() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="edit-date">Data (opcional)</Label>
-              <Input
-                id="edit-date"
-                type="datetime-local"
-                value={editDate}
-                onChange={(e) => setEditDate(e.target.value)}
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="edit-date"
+                  type="datetime-local"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="flex-1 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:contrast-100"
+                />
+                {editDate && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setEditDate('')}
+                    className="shrink-0"
+                    title="Remover data"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+              {!editDate && (
+                <p className="text-xs text-neutral-500">
+                  Série ficará sem data definida
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>

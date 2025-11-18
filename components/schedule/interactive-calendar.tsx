@@ -8,10 +8,12 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface SeriesWithDate {
   id: string
   date: string | null
+  is_completed?: boolean
   games: {
     name: string
     slug: string
@@ -32,19 +34,25 @@ export function InteractiveCalendar({ series }: InteractiveCalendarProps) {
     return series.filter(s => s.date !== null)
   }, [series])
 
-  // Criar mapa de datas com séries
+  // Criar mapa de datas com séries e identificar quais já aconteceram
   const datesWithSeries = useMemo(() => {
     const map = new Map<string, SeriesWithDate[]>()
+    const completedDates = new Set<string>()
     
     seriesWithDates.forEach(serie => {
       if (serie.date) {
         const dateKey = new Date(serie.date).toISOString().split('T')[0]
         const existing = map.get(dateKey) || []
         map.set(dateKey, [...existing, serie])
+        
+        // Marcar data como tendo jogos concluídos se pelo menos uma série estiver concluída
+        if (serie.is_completed) {
+          completedDates.add(dateKey)
+        }
       }
     })
     
-    return map
+    return { map, completedDates }
   }, [seriesWithDates])
 
   // Navegação do calendário
@@ -94,6 +102,41 @@ export function InteractiveCalendar({ series }: InteractiveCalendarProps) {
     today.setHours(0, 0, 0, 0)
     date.setHours(0, 0, 0, 0)
     return date < today
+  }
+
+  // Função para obter o caminho do logo baseado no slug do jogo
+  const getGameLogoPath = (slug: string | null | undefined): string | null => {
+    if (!slug) return null
+    const slugLower = slug.toLowerCase()
+    // Mapear slugs conhecidos para os logos disponíveis
+    const logoMap: Record<string, string> = {
+      'lol': '/games/logos/logo-lol.png',
+      'league of legends': '/games/logos/logo-lol.png',
+      'r6': '/games/logos/logo-r6.png',
+      'rainbow six siege': '/games/logos/logo-r6.png',
+      'valorant': '/games/logos/logo-valorant.png',
+      'cs': '/games/logos/logo-cs.png',
+      'counter-strike': '/games/logos/logo-cs.png',
+      'brawlhalla': '/games/logos/logo-brawlhalla.png',
+    }
+    return logoMap[slugLower] || null
+  }
+
+  // Obter jogos únicos de uma lista de séries
+  // Prioriza séries concluídas quando há múltiplas séries do mesmo jogo
+  const getUniqueGames = (series: SeriesWithDate[]) => {
+    const gamesMap = new Map<string, SeriesWithDate>()
+    series.forEach(serie => {
+      const slug = serie.games?.slug
+      if (slug) {
+        const existing = gamesMap.get(slug)
+        // Se não existe ou se a atual é concluída e a existente não é, substitui
+        if (!existing || (serie.is_completed && !existing.is_completed)) {
+          gamesMap.set(slug, serie)
+        }
+      }
+    })
+    return Array.from(gamesMap.values())
   }
 
   return (
@@ -166,8 +209,9 @@ export function InteractiveCalendar({ series }: InteractiveCalendarProps) {
           {Array.from({ length: daysInMonth }).map((_, index) => {
             const day = index + 1
             const dateKey = getDateKey(day)
-            const seriesForDate = datesWithSeries.get(dateKey) || []
+            const seriesForDate = datesWithSeries.map.get(dateKey) || []
             const hasSeries = seriesForDate.length > 0
+            const hasCompletedGames = datesWithSeries.completedDates.has(dateKey)
             const today = isToday(day)
             const past = isPast(day)
 
@@ -184,7 +228,9 @@ export function InteractiveCalendar({ series }: InteractiveCalendarProps) {
                 className={`
                   aspect-square relative rounded-md border transition-all duration-200
                   ${today 
-                    ? 'border-yellow-500/50 bg-yellow-500/10 shadow-[0_0_15px_rgba(234,179,8,0.3)]' 
+                    ? 'border-orange-500/50 bg-orange-500/10 shadow-[0_0_15px_rgba(249,115,22,0.3)]' 
+                    : hasCompletedGames
+                    ? 'border-green-500/50 bg-green-500/10 hover:bg-green-500/20 hover:border-green-500/70 cursor-pointer shadow-[0_0_10px_rgba(34,197,94,0.3)] hover:shadow-[0_0_15px_rgba(34,197,94,0.5)]'
                     : past
                     ? 'border-neutral-700/30 bg-neutral-800/20 opacity-60'
                     : hasSeries
@@ -195,12 +241,14 @@ export function InteractiveCalendar({ series }: InteractiveCalendarProps) {
                 `}
                 aria-label={hasSeries ? `Ver jogos do dia ${day}` : `Dia ${day}`}
               >
-                <div className="flex flex-col h-full p-1">
+                <div className="flex flex-col h-full p-0">
                   <span
                     className={`
-                      text-xs font-medium
+                      text-xs sm:text-sm font-medium mb-0.5 px-0.5
                       ${today 
-                        ? 'text-yellow-400' 
+                        ? 'text-orange-400' 
+                        : hasCompletedGames
+                        ? 'text-green-300'
                         : past
                         ? 'text-neutral-500'
                         : hasSeries
@@ -212,20 +260,47 @@ export function InteractiveCalendar({ series }: InteractiveCalendarProps) {
                     {day}
                   </span>
                   {hasSeries && (
-                    <div className="flex-1 flex items-end">
-                      <div className="w-full flex flex-col gap-0.5">
-                        {seriesForDate.slice(0, 2).map((serie) => (
-                          <div
-                            key={serie.id}
-                            className="w-full h-1.5 bg-blue-500 rounded shadow-[0_0_4px_rgba(59,130,246,0.6)]"
-                            title={`${serie.games?.name || 'Jogo'}`}
-                          />
-                        ))}
-                        {seriesForDate.length > 2 && (
-                          <div className="text-[8px] text-blue-400 font-medium font-heading">
-                            +{seriesForDate.length - 2}
-                          </div>
-                        )}
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="w-full flex flex-wrap items-center justify-center gap-0.5">
+                        {(() => {
+                          const uniqueGames = getUniqueGames(seriesForDate)
+                          // Mostrar menos logos para que fiquem maiores
+                          const maxLogos = uniqueGames.length <= 2 ? uniqueGames.length : 2
+                          const gamesToShow = uniqueGames.slice(0, maxLogos)
+                          const remainingCount = uniqueGames.length - gamesToShow.length
+                          
+                          return (
+                            <>
+                              {gamesToShow.map((serie) => {
+                                const logoPath = getGameLogoPath(serie.games?.slug)
+                                if (!logoPath) return null
+                                
+                                return (
+                                  <div
+                                    key={`${serie.games?.slug || serie.id}-${serie.id}`}
+                                    className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded overflow-hidden hover:scale-110 transition-transform flex items-center justify-center"
+                                    title={`${serie.games?.name || 'Jogo'}${serie.is_completed ? ' (Concluído)' : ''}`}
+                                  >
+                                    <Image
+                                      src={logoPath}
+                                      alt={serie.games?.name || 'Jogo'}
+                                      fill
+                                      className="object-contain"
+                                      sizes="(max-width: 640px) 40px, (max-width: 768px) 48px, (max-width: 1024px) 56px, 64px"
+                                    />
+                                  </div>
+                                )
+                              })}
+                              {remainingCount > 0 && (
+                                <div className={`text-[9px] sm:text-[10px] font-medium font-heading px-0.5 ${
+                                  hasCompletedGames ? 'text-green-400' : 'text-blue-400'
+                                }`}>
+                                  +{remainingCount}
+                                </div>
+                              )}
+                            </>
+                          )
+                        })()}
                       </div>
                     </div>
                   )}
@@ -239,10 +314,14 @@ export function InteractiveCalendar({ series }: InteractiveCalendarProps) {
         <div className="mt-6 pt-4 border-t border-neutral-700/50 flex flex-wrap gap-4 text-xs">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded border border-blue-500/50 bg-blue-500/10 shadow-[0_0_8px_rgba(59,130,246,0.3)]" />
-            <span className="text-neutral-300">Com jogos</span>
+            <span className="text-neutral-300">Jogos futuros</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded border border-yellow-500/50 bg-yellow-500/10 shadow-[0_0_8px_rgba(234,179,8,0.3)]" />
+            <div className="w-4 h-4 rounded border border-green-500/50 bg-green-500/10 shadow-[0_0_8px_rgba(34,197,94,0.3)]" />
+            <span className="text-neutral-300">Jogos realizados</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded border border-orange-500/50 bg-orange-500/10 shadow-[0_0_8px_rgba(249,115,22,0.3)]" />
             <span className="text-neutral-300">Hoje</span>
           </div>
           <div className="flex items-center gap-2">

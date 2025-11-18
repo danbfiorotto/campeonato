@@ -88,7 +88,7 @@ export function AnimatedHeroScore({ racWins, astWins }: AnimatedHeroScoreProps) 
   return (
     <div 
       ref={scoreRef}
-      className="flex items-center gap-3 sm:gap-4 md:gap-6 lg:gap-12 order-2"
+      className="flex items-center gap-3 sm:gap-4 md:gap-6 lg:gap-12"
     >
       {/* Divisor decorativo */}
       <div className="hidden md:block w-px h-24 bg-gradient-to-b from-transparent via-orange-500/50 to-transparent"></div>
