@@ -20,7 +20,7 @@ export function VisionUploader() {
   const supabase = createClient()
   const router = useRouter()
 
-  // Carregar séries ativas
+  // Carregar séries (incluindo completadas para permitir correções/adições retroativas)
   const loadSeries = async () => {
     const { data, error } = await supabase
       .from('series')
@@ -28,13 +28,23 @@ export function VisionUploader() {
         *,
         games (*)
       `)
-      .eq('is_completed', false)
       .order('created_at', { ascending: false })
 
     if (error) {
       console.error('Erro ao carregar séries:', error)
     } else {
-      setSeries(data || [])
+      // Ordenar: séries não completadas primeiro, depois por data de criação (mais recentes primeiro)
+      const sorted = (data || []).sort((a, b) => {
+        // Primeiro: não completadas antes de completadas
+        if (a.is_completed !== b.is_completed) {
+          return a.is_completed ? 1 : -1
+        }
+        // Depois: mais recentes primeiro
+        const dateA = new Date(a.created_at).getTime()
+        const dateB = new Date(b.created_at).getTime()
+        return dateB - dateA
+      })
+      setSeries(sorted)
     }
     setLoading(false)
   }
@@ -108,9 +118,25 @@ export function VisionUploader() {
       setCurrentStep('processing')
       setProgress(70)
 
+      // Detectar jogo da série
+      const selectedSeries = series.find((s) => s.id === selectedSeriesId)
+      const game = selectedSeries?.games as any
+      const gameSlug = game?.slug?.toLowerCase() || ''
+      
+      // Mapear slug do jogo para o formato esperado pela API
+      let gameParam: 'lol' | 'r6' = 'lol' // Default
+      if (gameSlug === 'r6' || gameSlug === 'rainbow six siege') {
+        gameParam = 'r6'
+      } else if (gameSlug === 'lol' || gameSlug === 'league of legends') {
+        gameParam = 'lol'
+      }
+      
+      console.log('[UPLOADER] Game detectado:', gameSlug, '->', gameParam)
+
       // Chamar API de parse
       console.log('[UPLOADER] Chamando API de parse...')
       console.log('[UPLOADER] Series ID:', selectedSeriesId)
+      console.log('[UPLOADER] Game:', gameParam)
       console.log('[UPLOADER] Image URL:', publicUrl.substring(0, 100) + '...')
 
       const response = await fetch('/api/ingest/vision/parse', {
@@ -121,6 +147,7 @@ export function VisionUploader() {
         body: JSON.stringify({
           seriesId: selectedSeriesId,
           imageUrl: publicUrl,
+          game: gameParam,
         }),
       })
 
@@ -187,7 +214,7 @@ export function VisionUploader() {
           Extrair Placar via OpenAI Vision
         </h3>
         <p className="text-sm text-neutral-400 mb-4">
-          Faça upload de um print do placar final do League of Legends. O sistema irá extrair automaticamente os dados usando IA.
+          Faça upload de um print do placar final (LoL ou R6). O sistema irá extrair automaticamente os dados usando IA.
         </p>
 
         <div className="space-y-4">
@@ -202,7 +229,9 @@ export function VisionUploader() {
                   const game = s.games as any
                   return (
                     <SelectItem key={s.id} value={s.id}>
-                      {game?.name || 'Série'} {s.is_completed ? '(Concluída)' : ''}
+                      <span className={s.is_completed ? 'opacity-75' : ''}>
+                        {game?.name || 'Série'} {s.is_completed ? '✓ (Concluída)' : ''}
+                      </span>
                     </SelectItem>
                   )
                 })}
